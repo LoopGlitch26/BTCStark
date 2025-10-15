@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BitShade-Pro — Private BTC→Starknet Prototype (Client Demo)</title>
+<style>
+  :root{ --bg:#06121a; --card:#071a24; --muted:#9fb0c6; --accent:#7c5cff; --ok:#16a34a; --bad:#ef4444; --glass: rgba(255,255,255,0.02);}
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:linear-gradient(180deg,#03121a,#04131b);color:#e6eef8;padding:22px;}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  h1{margin:0;font-size:20px}
+  .lead{margin:0;color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
+  .card{background:linear-gradient(180deg,var(--card),#051424);border-radius:12px;padding:14px;box-shadow:0 8px 28px rgba(2,6,23,0.6)}
+  .row{display:flex;gap:8px;align-items:center}
+  button{background:linear-gradient(0deg,var(--accent),#9f85ff);border:0;color:white;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 10px}
+  input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .small{font-size:13px;color:var(--muted)}
+  .tiny{font-size:12px;color:var(--muted)}
+  .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px}
+  .log{height:180px;overflow:auto;background:var(--glass);padding:8px;border-radius:8px;font-size:13px}
+  .list{max-height:240px;overflow:auto}
+  .muted{color:var(--muted)}
+  .success{color:var(--ok)}
+  .danger{color:var(--bad)}
+  footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} header{flex-direction:column;align-items:flex-start} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>BitShade-Pro</h1>
+      <p class="lead">Client-only prototype: private BTC→Starknet UX. UTXO-like notes, Merkle proof simulation, encrypted backups, Glock roadmap.</p>
+    </div>
+    <div class="row">
+      <div class="stat">
+        <div class="tiny">Mock BTC</div>
+        <div class="k mono" id="btcBal">0.500000 BTC</div>
+      </div>
+      <div style="width:8px"></div>
+      <div class="stat">
+        <div class="tiny">wSTRK</div>
+        <div class="k mono" id="wBal">0.0000</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <h3 style="margin:0 0 8px">Deposit (Mock BTC → wSTRK)</h3>
+            <div class="small muted">Create private notes representing wrapped balance. Notes act like UTXOs (can split/change).</div>
+          </div>
+          <div style="text-align:right">
+            <div class="tiny muted">Bridge</div>
+            <select id="bridgeSelect" style="max-width:200px">
+              <option value="mock">Mock Bridge (demo)</option>
+              <option value="atomiq">Atomiq (placeholder)</option>
+              <option value="garden">Garden (placeholder)</option>
+              <option value="glock">Glock (Planned)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+        <div class="row" style="gap:8px">
+          <input id="depositAmount" placeholder="amount BTC (e.g. 0.01)" style="max-width:200px"/>
+          <select id="depositPreset" style="max-width:140px">
+            <option value="">preset</option>
+            <option value="0.01">0.01 BTC</option>
+            <option value="0.05">0.05 BTC</option>
+            <option value="0.1">0.1 BTC</option>
+          </select>
+          <button id="btnDeposit">Deposit</button>
+          <button class="ghost" id="btnBatchDeposit">Batch (3×0.01)</button>
+        </div>
+
+        <div style="height:10px"></div>
+        <div class="tiny muted">Note types: each deposit generates a <em>note</em> (secret + leaf). Keep notes safe. You can download encrypted backup in the backup panel.</div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px">Withdraw — choose how to cover amount</h3>
+        <div class="small muted">Paste a note to withdraw single-note, or select notes below to cover an arbitrary amount. The app can make change notes for remaining balance.</div>
+        <div style="height:8px"></div>
+
+        <div class="row" style="gap:8px;align-items:flex-start">
+          <div style="flex:1">
+            <textarea id="noteInput" rows="2" placeholder="paste a single note here (optional)"></textarea>
+            <div style="height:8px"></div>
+            <input id="withdrawAmount" placeholder="withdraw amount (wSTRK, demo uses conversion)"/>
+            <div style="height:8px"></div>
+            <input id="destAddr" placeholder="destination address (mock) e.g. 0x12...9fab"/>
+            <div style="height:8px"></div>
+            <label class="tiny"><input type="checkbox" id="checkboxGasless"/> Gasless (Paymaster simulated)</label>
+            <div style="height:10px"></div>
+            <div class="row">
+              <button id="btnAutoSelect">Auto-select notes</button>
+              <button id="btnWithdraw">Withdraw</button>
+              <button class="ghost" id="btnVerifyProof">Verify proof (debug)</button>
+            </div>
+            <div style="height:8px"></div>
+            <div id="withdrawNote" class="tiny muted"></div>
+          </div>
+
+          <div style="width:230px">
+            <div class="pill tiny">Selection</div>
+            <div style="height:8px"></div>
+            <div id="notesForSelect" class="list mono small" style="max-height:220px;overflow:auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px">Activity & Transactions</h3>
+        <div class="tiny muted">Chronological activity. Click a tx to view receipt (masked addresses, proof details).</div>
+        <div style="height:8px"></div>
+        <div id="txLog" class="log mono"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3 style="margin:0 0 8px">Quick Tools</h3>
+        <div class="row" style="gap:8px;margin-bottom:8px">
+          <button class="ghost" id="btnDemoRun">One-click Demo Run</button>
+          <button class="ghost" id="btnExportEnc">Export Encrypted Backup</button>
+          <button class="ghost" id="btnImportEnc">Import Encrypted Backup</button>
+          <button class="ghost" id="btnReset">Reset Demo</button>
+        </div>
+        <div class="tiny muted">Backups use password-based encryption (AES-GCM). Use a strong password for export/import.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Pool Inspector</h3>
+        <div class="small muted">Merkle leaves shown (sha256 of note secret). Click a leaf to inspect index and build proof (client-only).</div>
+        <div style="height:8px"></div>
+        <div class="pill tiny">Root</div>
+        <div id="root" class="mono" style="margin-top:8px">—</div>
+        <div class="tiny muted" id="poolCount">pool size: 0</div>
+        <div style="height:10px"></div>
+        <div id="leavesBox" class="list mono small"></div>
+
+        <div style="margin-top:8px">
+          <button id="btnSyncRootOnChain">Sync root → Starknet</button>
+          <button id="btnCheckOnChain">Check on-chain root</button>
+          <div class="tiny muted" id="onchainStatus"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">My Notes</h3>
+        <div class="small muted">Stored locally. Each note = secret + leaf. You can copy, download, or generate QR for a note.</div>
+        <div style="height:8px"></div>
+        <div id="myNotes" class="list"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Nullifiers (spent)</h3>
+        <div class="small muted">Used nullifiers are listed here to illustrate double-spend prevention.</div>
+        <div id="nulls" class="mono tiny" style="margin-top:8px;max-height:120px;overflow:auto"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0 0 6px">Glock — Alpen (Roadmap)</h3>
+          <div class="badge tiny" id="glockBadge">Glock (Planned)</div>
+        </div>
+        <div class="small muted">Glock is the trust-minimized verifier Alpen is building for provable BTC→Starknet bridges. This demo shows how we will replace the mock bridge with Glock when integrating (see README & links).</div>
+        <div style="height:10px"></div>
+        <div class="row" style="justify-content:flex-end">
+          <button class="ghost" id="btnGlockInfo">What is Glock?</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>BitShade-Pro — Client demo only. For production: on-chain verifiers (Garaga/Noir), Glock integration (Alpen), and audited contracts required.</footer>
+</div>
+
+<!-- Glock Modal -->
+<div id="glockModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.7);align-items:center;justify-content:center;padding:24px;">
+  <div style="max-width:760px;margin:auto;background:#071726;border-radius:10px;padding:18px;color:#e6eef8">
+    <h3 style="margin:0 0 8px">Glock (Alpen) — Trust-minimized BTC verification</h3>
+    <p style="color:var(--muted);margin:0 0 12px">
+      Glock is a cryptographic primitive / verifier being developed by Alpen that allows Bitcoin transactions to depend on verifiable off-chain computation with minimal on-chain footprint.
+      Starknet announced collaboration with Alpen to enable Glock-powered bridges that mint **verifiable BTC** on Starknet without custodial wrappers.
+    </p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="btnGlockClose">Close</button>
+      <a href="https://www.starknet.io/blog/starknet-alpen-bitcoin-glock/" target="_blank" rel="noreferrer"><button class="ghost">Read Starknet announcement</button></a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* BitShade-Pro (zipped bundle version)
+   Core: client-side demo with Merkle notes, nullifiers, encrypted backups.
+   Includes minimal Starknet integration UI for devnet/ArgentX (no auto deploy).
+*/
+
+// Utilities
+const $ = id => document.getElementById(id);
+const now = () => new Date().toISOString();
+const toFixed = (n,dec=6) => Number(n).toFixed(dec);
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function buf2hex(buffer){ const bytes=new Uint8Array(buffer); return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+async function sha256Hex(text){ const enc=new TextEncoder(); const data=enc.encode(text); const h=await crypto.subtle.digest('SHA-256', data); return buf2hex(h); }
+function randB64(len=32){ const a=crypto.getRandomValues(new Uint8Array(len)); let s=''; for(let i=0;i<a.length;i++) s+=String.fromCharCode(a[i]); return btoa(s); }
+
+// State
+const KEY = 'bitshade_pro_state_v2';
+let state = { btcBalance:0.5, wBalance:0.0, notes:[], leaves:[], nulls:[], txs:[] };
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function load(){ try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s) state=s; }catch(e){} }
+load(); renderAll();
+
+// Renderers
+function uiLog(msg, lvl='info'){ const el=document.createElement('div'); el.innerHTML=`<span class="tiny muted">${(new Date()).toLocaleTimeString()}</span> — ${escapeHtml(msg)}`; if(lvl==='error') el.style.color='var(--bad)'; $('txLog').prepend(el); }
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function renderAll(){ $('btcBal').textContent=`${toFixed(state.btcBalance,6)} BTC`; $('wBal').textContent=`${toFixed(state.wBalance,4)} wSTRK`; renderLeaves(); renderNotes(); renderNulls(); renderRoot(); renderTxs(); }
+function renderLeaves(){ const box=$('leavesBox'); if(!state.leaves.length){ box.innerHTML='<div class="muted tiny">no leaves</div>'; return; } box.innerHTML=state.leaves.map((l,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02)"><div>#${i} <span class="mono">${l.substr(0,14)}...</span></div><div><button class="copyBtn" data-i="${i}">Inspect</button></div></div>`).join(''); box.querySelectorAll('.copyBtn').forEach(b=>{ b.onclick=async ()=>{ const i=Number(b.getAttribute('data-i')); const root=await calcMerkleRoot(state.leaves); const proof=await makeMerkleProof(state.leaves,i); alert(`Leaf #${i}\nleaf: ${state.leaves[i].substr(0,32)}...\nindex: ${i}\nroot: ${root.substr(0,32)}...\nproofLen: ${proof.length}`); uiLog(`Inspected leaf #${i}`); }; }); }
+function renderNotes(){ const box=$('myNotes'); if(!state.notes.length){ box.innerHTML='<div class="muted tiny">no notes stored</div>'; return; } box.innerHTML=state.notes.map((n,idx)=>{ const [s,leaf,amt]=n.split(':'); return `<div style="padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.02)"><div class="mono">${leaf.substr(0,18)}... - <span class="tiny muted">${amt} wSTRK</span></div><div class="tiny" style="margin-top:6px"><button class="copyBtn" data-copy="${idx}">Copy</button> <button class="copyBtn" data-qr="${idx}">QR</button> <button class="copyBtn" data-dl="${idx}">Download</button></div></div>`; }).join(''); box.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async ()=>{ const i=b.getAttribute('data-copy'); await navigator.clipboard.writeText(state.notes[i]); uiLog('Note copied to clipboard'); }); box.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>{ const i=b.getAttribute('data-dl'); downloadText(`note-${i}.txt`, state.notes[i]); uiLog('Note downloaded'); }); box.querySelectorAll('[data-qr]').forEach(b=>b.onclick=()=>{ const i=b.getAttribute('data-qr'); showQR(state.notes[i]); }); }
+function renderNulls(){ $('nulls').innerHTML = state.nulls.length? state.nulls.map(n=>`<div>${n.substr(0,14)}...</div>`).join(''):'<div class="muted tiny">none</div>'; }
+async function renderRoot(){ const root = await calcMerkleRoot(state.leaves); $('root').textContent = root || '—'; $('poolCount').textContent = 'pool size: '+state.leaves.length; }
+function renderTxs(){ $('txLog').innerHTML = state.txs.slice().reverse().map(t=>`<div style="padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.02)"><div><strong class="mono">${t.type}</strong> <span class="tiny muted">${t.time.split('T')[1].slice(0,8)}</span></div><div class="tiny">${escapeHtml(t.summary)}</div></div>`).join(''); }
+
+// Merkle
+async function calcMerkleRoot(leaves){ if(!leaves.length) return ''; let level = leaves.slice(); while(level.length>1){ const next=[]; for(let i=0;i<level.length;i+=2){ const a=level[i]; const b=(i+1<level.length)?level[i+1]:level[i]; next.push(await sha256Hex(a+b)); } level = next; } return level[0]; }
+async function makeMerkleProof(leaves,index){ let idx=index; let level=leaves.slice(); const proof=[]; while(level.length>1){ const pairIndex=Math.floor(idx/2); const siblingIndex=(idx%2===0)? idx+1: idx-1; const sibling=(siblingIndex<level.length)? level[siblingIndex]: level[idx]; proof.push({sibling, isLeft:(idx%2!==0)}); const next=[]; for(let i=0;i<level.length;i+=2){ const a=level[i]; const b=(i+1<level.length)? level[i+1]:level[i]; next.push(await sha256Hex(a+b)); } level = next; idx = pairIndex; } return proof; }
+async function verifyMerkleProof(leaf, proof, root, index){ let computed = leaf; let idx = index; for(const step of proof){ if(idx%2===0) computed = await sha256Hex(computed + (step.sibling||computed)); else computed = await sha256Hex((step.sibling||computed) + computed); idx = Math.floor(idx/2); } return computed === root; }
+
+// Business logic
+const RATE = 1000;
+async function createNoteForAmount(wAmount){ const secret=randB64(32); const leaf=await sha256Hex(secret); return `${secret}:${leaf}:${wAmount}`; }
+async function deposit(amountBTC){ amountBTC = Number(amountBTC); if(!amountBTC||amountBTC<=0){ uiLog('Invalid deposit amount','error'); return; } if(amountBTC>state.btcBalance){ uiLog('Insufficient mock BTC balance','error'); return; } const w = Number((amountBTC*RATE).toFixed(6)); const note = await createNoteForAmount(w); state.notes.push(note); const leaf = note.split(':')[1]; state.leaves.push(leaf); state.btcBalance = Number((state.btcBalance - amountBTC).toFixed(6)); state.wBalance = Number((state.wBalance + w).toFixed(6)); state.txs.push({type:'DEPOSIT', time:now(), summary:`Deposited ${amountBTC} BTC → ${w} wSTRK. Note created (local)`}); save(); renderAll(); uiLog(`Deposit: ${amountBTC} BTC → ${w} wSTRK (note created, copied to clipboard if allowed)`); try{ await navigator.clipboard.writeText(note); uiLog('Note copied to clipboard (demo)'); }catch(e){} return note; }
+function autoSelectNotes(amount){ amount = Number(amount); const available = state.notes.map((n,idx)=>{ const parts=n.split(':'); return {idx, note:n, leaf:parts[1], amt: Number(parts[2])}; }); available.sort((a,b)=>b.amt - a.amt); const picked=[]; let sum=0; for(const a of available){ if(sum>=amount) break; picked.push(a); sum += a.amt; } if(sum < amount) return null; return {picked, sum}; }
+async function withdrawWithNote(noteStr, dest, gasless=false){ if(!noteStr){ uiLog('Note required','error'); return; } const parts=noteStr.split(':'); if(parts.length<3){ uiLog('Bad note format','error'); return; } const secret=parts[0], leaf=parts[1], amt=Number(parts[2]); const idx = state.leaves.indexOf(leaf); if(idx===-1){ uiLog('Note not found in pool (maybe spent)','error'); return; } const proof = await makeMerkleProof(state.leaves, idx); const root = await calcMerkleRoot(state.leaves); const nullifier = await sha256Hex('null:'+noteStr); if(state.nulls.includes(nullifier)){ uiLog('Nullifier already used','error'); return; } const ok = await verifyMerkleProof(leaf, proof, root, idx); if(!ok){ uiLog('Proof verification failed (client)','error'); return; } state.nulls.push(nullifier); state.leaves.splice(idx,1); const noteIdx = state.notes.indexOf(noteStr); if(noteIdx!==-1) state.notes.splice(noteIdx,1); state.wBalance = Number((state.wBalance - amt).toFixed(6)); state.txs.push({type:'WITHDRAW', time:now(), summary:`Withdraw ${amt} wSTRK → ${dest}. Gasless:${gasless}`}); save(); renderAll(); uiLog(`Withdraw success: ${amt} wSTRK → ${dest}. (note consumed)`); }
+async function withdrawAmount(amount, dest, gasless=false){ amount = Number(amount); if(isNaN(amount)||amount<=0){ uiLog('Invalid withdraw amount','error'); return; } if(amount > state.wBalance){ uiLog('Insufficient wrapped balance','error'); return; } const selection = autoSelectNotes(amount); if(!selection){ uiLog('Insufficient notes to cover amount (auto-select failed)','error'); return; } for(const p of selection.picked){ const n=p.note; const nullifier = await sha256Hex('null:'+n); state.nulls.push(nullifier); const leaf=p.leaf; const li = state.leaves.indexOf(leaf); if(li!==-1) state.leaves.splice(li,1); const ni = state.notes.indexOf(n); if(ni!==-1) state.notes.splice(ni,1); } const sum = selection.sum; const change = Number((sum - amount).toFixed(6)); if(change>0.000001){ const changeNote = await createNoteForAmount(change); state.notes.push(changeNote); state.leaves.push(changeNote.split(':')[1]); uiLog(`Change note created: ${change} wSTRK`); } state.wBalance = Number((state.wBalance - amount).toFixed(6)); state.txs.push({type:'WITHDRAW', time:now(), summary:`Withdraw ${amount} wSTRK → ${dest} (used ${selection.picked.length} notes)`}); save(); renderAll(); uiLog(`Withdraw ${amount} wSTRK processed to ${dest}. Gasless:${gasless}`); }
+async function exportEncrypted(password){ if(!password){ uiLog('Password required for encrypted export','error'); return; } const enc=new TextEncoder(); const salt=crypto.getRandomValues(new Uint8Array(16)); const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveKey']); const key = await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'}, keyMaterial, {name:'AES-GCM',length:256}, true, ['encrypt']); const iv=crypto.getRandomValues(new Uint8Array(12)); const data=new TextEncoder().encode(JSON.stringify(state)); const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, data); const payload={ s: btoa(String.fromCharCode(...salt)), i: btoa(String.fromCharCode(...iv)), c: btoa(String.fromCharCode(...new Uint8Array(ct))) }; downloadText('bitshade_backup_enc.json', JSON.stringify(payload, null, 2)); uiLog('Encrypted backup saved (download).'); }
+async function importEncryptedFile(file,password){ try{ const txt=await file.text(); const payload=JSON.parse(txt); const salt=Uint8Array.from(atob(payload.s),c=>c.charCodeAt(0)); const iv=Uint8Array.from(atob(payload.i),c=>c.charCodeAt(0)); const ct=Uint8Array.from(atob(payload.c),c=>c.charCodeAt(0)); const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), {name:'PBKDF2'}, false, ['deriveKey']); const key = await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'}, keyMaterial, {name:'AES-GCM',length:256}, true, ['decrypt']); const data = await crypto.subtle.decrypt({name:'AES-GCM',iv}, key, ct); const obj = JSON.parse(new TextDecoder().decode(data)); state = obj; save(); renderAll(); uiLog('Encrypted backup imported successfully.'); }catch(e){ uiLog('Import failed: '+(e.message||e),'error'); } }
+function downloadText(filename,text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); }
+function showQR(text){ const w=window.open('','_blank','noopener'); w.document.write('<title>Note QR</title><pre style="word-break:break-all;">'+escapeHtml(text)+'</pre><p>Use a QR generator to encode this note for mobile import.</p>'); w.document.close(); }
+
+// UI wiring
+$('depositPreset').onchange = ()=>{$('depositAmount').value = $('depositPreset').value;};
+$('btnDeposit').onclick = async ()=>{ const amt=$('depositAmount').value||'0.01'; await deposit(amt); };
+$('btnBatchDeposit').onclick = async ()=>{ for(let i=0;i<3;i++){ await deposit(0.01); await sleep(200);} uiLog('Batch deposit completed');};
+$('btnAutoSelect').onclick = ()=>{ const amt=Number($('withdrawAmount').value||0); if(!amt){ uiLog('Enter withdraw amount first','error'); return; } const selected=autoSelectNotes(amt); if(!selected){ uiLog('Auto-select failed (insufficient notes)','error'); return; } const list=selected.picked.map(p=>`#${p.idx} ${p.amt} wSTRK`).join(', '); $('notesForSelect').innerHTML = `<div class="tiny muted">selected: ${list}</div>`; uiLog('Notes auto-selected: '+list);};
+$('btnWithdraw').onclick = async ()=>{ const note=$('noteInput').value.trim(); const amt=$('withdrawAmount').value; const dest=$('destAddr').value||'dst_mock'; const gasless=$('checkboxGasless').checked; if(note){ await withdrawWithNote(note,dest,gasless); return; } if(!amt){ uiLog('Enter withdraw amount or paste a note','error'); return; } await withdrawAmount(amt,dest,gasless);};
+$('btnVerifyProof').onclick = async ()=>{ const pasted=$('noteInput').value.trim(); if(!pasted){ uiLog('Paste a note to verify','error'); return; } const parts=pasted.split(':'); const leaf=parts[1]; const idx=state.leaves.indexOf(leaf); if(idx===-1){ uiLog('Leaf not found in pool (cannot verify)','error'); return; } const proof=await makeMerkleProof(state.leaves,idx); const root=await calcMerkleRoot(state.leaves); const ok=await verifyMerkleProof(leaf,proof,root,idx); uiLog('Proof verify: '+(ok? 'OK':'FAILED'));};
+$('btnExportEnc').onclick = async ()=>{ const pw=prompt('Enter export password (strong):'); if(!pw) return; await exportEncrypted(pw);};
+$('btnImportEnc').onclick = ()=>{ const f=document.createElement('input'); f.type='file'; f.accept='.json'; f.onchange = e => { const file=e.target.files[0]; const pw=prompt('Enter password to decrypt:'); if(!pw) return; importEncryptedFile(file,pw); }; f.click();};
+$('btnReset').onclick = ()=>{ if(confirm('Reset demo and clear local state?')){ localStorage.removeItem(KEY); state={btcBalance:0.5,wBalance:0,notes:[],leaves:[],nulls:[],txs:[]}; save(); renderAll(); uiLog('Demo reset.'); } };
+$('btnDemoRun').onclick = async ()=>{ uiLog('Demo run started'); const n=await deposit(0.02); await sleep(400); await withdrawWithNote(n,'0xDEMO',true); uiLog('Demo run completed');};
+$('btnGlockInfo').onclick = ()=>{$('glockModal').style.display='flex';};
+$('btnGlockClose').onclick = ()=>{$('glockModal').style.display='none';};
+
+// Starknet integration helpers (ArgentX/devnet)
+const CONTRACT_ADDRESS = '0xREPLACE_WITH_YOUR_DEPLOYED_CONTRACT_ADDRESS';
+// convert hex SHA256 -> felt-ish decimal (demo packing)
+function hexToFelt(hex){ if(hex.startsWith('0x')) hex = hex.slice(2); const truncated = hex.slice(-62); return BigInt('0x'+truncated).toString(); }
+
+async function readOnChainRoot(){
+  try {
+    if(window.starknet && window.starknet.provider){
+      const payload = { jsonrpc: "2.0", id:1, method:"starknet_call", params:[{ contract_address: CONTRACT_ADDRESS, entry_point_selector: "get_root", calldata: [] }, "latest"] };
+      const res = await fetch('http://127.0.0.1:5050/', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r=>r.json());
+      const rootVal = res.result ? res.result[0] : '(no result)';
+      $('onchainStatus').textContent = 'on-chain root: ' + rootVal;
+      uiLog('on-chain root read: ' + rootVal);
+      return rootVal;
+    } else { uiLog('No Starknet provider found for read; install ArgentX or use devnet RPC.','error'); }
+  } catch(e){ uiLog('readOnChainRoot failed: '+e.message,'error'); }
+}
+
+async function syncRootToChain(localRootHex){
+  try{
+    const feltRoot = hexToFelt(localRootHex);
+    if(!window.starknet){ uiLog('No wallet found (ArgentX). Please install and connect.','error'); return; }
+    await window.starknet.enable();
+    const invocation = await window.starknet.invokeFunction({ contractAddress: CONTRACT_ADDRESS, entrypoint: 'store_root', calldata: [feltRoot.toString()] });
+    uiLog('store_root tx submitted. tx: ' + JSON.stringify(invocation));
+  }catch(e){ uiLog('syncRootToChain failed: '+(e.message||e),'error'); }
+}
+
+async function markNullifierOnChain(nullifierHex){
+  try{
+    const felt = hexToFelt(nullifierHex);
+    if(!window.starknet){ uiLog('No wallet found for markNullifierOnChain','error'); return; }
+    await window.starknet.enable();
+    const invocation = await window.starknet.invokeFunction({ contractAddress: CONTRACT_ADDRESS, entrypoint: 'use_nullifier', calldata: [felt.toString()] });
+    uiLog('use_nullifier tx submitted.');
+    return invocation;
+  }catch(e){ uiLog('markNullifierOnChain failed: '+(e.message||e),'error'); }
+}
+
+// Hook markNullifierOnChain into withdraw operations: call it after local nullifier pushed (optional)
+// For demo, not automatically calling onchain to avoid wallet popups
+
+renderAll();
+</script>
+</body>
+</html>
