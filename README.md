@@ -1,5 +1,7 @@
 # BitShade-Pro — Private Bitcoin to Starknet Bridge
 
+<img width="1536" height="1024" alt="ChatGPT Image Oct 16, 2025, 12_14_01 AM" src="https://github.com/user-attachments/assets/153f4315-1994-4bef-bceb-87afaa69e262" />
+
 ## 🌉 Overview
 
 **BitShade-Pro** is a next-generation privacy-first Bitcoin-to-Starknet bridge designed to enable users to transfer, use, and manage Bitcoin assets on Starknet with complete control and confidentiality. It allows anyone to move BTC to Starknet, convert it into wrapped STRK assets, and perform on-chain payments, swaps, or DeFi interactions — all while preserving user privacy and minimizing trust.
