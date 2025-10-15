@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BTCStark — Demo</title>
+<style>
+  :root{--bg:#0f1720;--card:#0b1220;--muted:#94a3b8;--accent:#7c5cff;--ok:#16a34a;--bad:#ef4444;--glass: rgba(255,255,255,0.03)}
+  body{font-family:Inter,ui-sans-serif,system-ui,Arial; background:linear-gradient(180deg,#071025,#08121a); color:#e6eef8; margin:0; padding:28px;}
+  .wrap{max-width:980px;margin:0 auto;}
+  h1{margin:0 0 6px;font-size:20px}
+  p.lead{margin:0 0 18px;color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+  button{background:linear-gradient(0deg,var(--accent),#9f85ff);border:0;color:white;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:600}
+  input,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+  .small{font-size:12px;color:var(--muted)}
+  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, monospace}
+  .row{display:flex;gap:8px;align-items:center}
+  .log{height:180px;overflow:auto;background:var(--glass);padding:8px;border-radius:8px;font-size:13px}
+  .pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px}
+  .muted{color:var(--muted)}
+  .success{color:var(--ok)}
+  .danger{color:var(--bad)}
+  .tiny{font-size:11px;color:var(--muted)}
+  .center{display:flex;gap:8px;align-items:center;justify-content:center}
+  footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BTCStark</h1>
+  <p class="lead">Simulates: mock BTC deposit → Merkle mixer (client-side) → withdraw with proof & nullifier. Uses Web Crypto SHA-256. No servers.</p>
+
+  <div class="grid">
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <div class="pill tiny">Pool root</div>
+            <div id="root" class="mono" style="margin-top:8px">—</div>
+            <div class="small muted" id="poolSize">pool size: 0</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Gasless (paymaster)</div>
+            <label class="row" style="justify-content:flex-end">
+              <input id="toggleGasless" type="checkbox"/>
+            </label>
+            <div style="height:8px"></div>
+            <div class="tiny muted">Local demo — no real funds</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px">Deposit (mock BTC)</h3>
+        <div class="small muted">Creates a secret note and adds leaf to the pool.</div>
+        <div style="height:10px"></div>
+        <div class="row" style="gap:10px">
+          <button id="btnDeposit">Deposit (mock)</button>
+          <button id="btnShowNotes" style="background:#2b3440">Show my notes</button>
+        </div>
+        <div style="height:8px"></div>
+        <div class="tiny muted">Your note is the secret used to withdraw later. Copy it safely.</div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 8px">Withdraw</h3>
+        <div class="small muted">Paste your note here to create a proof and withdraw.</div>
+        <div style="height:8px"></div>
+        <textarea id="noteInput" rows="2" placeholder="paste note here (from deposit)"></textarea>
+        <div style="height:8px"></div>
+        <input id="destAddr" placeholder="destination address (mock)"/>
+        <div style="height:8px"></div>
+        <div class="row">
+          <button id="btnWithdraw">Withdraw (prove & send)</button>
+          <button id="btnVerify" style="background:#233b32">Verify Proof (debug)</button>
+        </div>
+        <div style="height:8px"></div>
+        <div class="tiny muted">Withdraw stores a nullifier to prevent double-withdraw.</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px">Console / Activity</h3>
+        <div id="log" class="log mono"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Pool Inspector</h3>
+        <div class="small muted">Merkle leaves (sha256 of notes). For demo only.</div>
+        <div style="height:8px"></div>
+        <div id="leavesBox" class="mono small" style="max-height:220px;overflow:auto"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">My Notes (local)</h3>
+        <div class="small muted">Notes are stored in localStorage. Click to copy.</div>
+        <div id="myNotes" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 6px">Nullifiers</h3>
+        <div class="small muted">Used withdrawal nullifiers (prevents double spend)</div>
+        <div id="nulls" class="mono" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+]</div>
+
+<script>
+/*
+  BTCStark
+  - Uses Web Crypto (SHA-256) for commitments
+  - Simple array-based Merkle tree (binary) for small pool
+  - Note format: base64(random 32 bytes) + ":" + hex(leaf)
+  - Nullifier: SHA256("null" + note) to prevent double withdraw
+*/
+
+const logEl = id('log'), rootEl = id('root'), poolSizeEl = id('poolSize');
+const leavesBox = id('leavesBox'), myNotesBox = id('myNotes'), nullsBox = id('nulls');
+
+let state = {
+  leaves: JSON.parse(localStorage.getItem('bs_leaves')||'[]'),
+  notes: JSON.parse(localStorage.getItem('bs_notes')||'[]'),
+  nulls: JSON.parse(localStorage.getItem('bs_nulls')||'[]')
+};
+
+renderAll();
+
+id('btnDeposit').addEventListener('click', async ()=>{
+  const noteBytes = crypto.getRandomValues(new Uint8Array(32));
+  const noteB64 = arrayBufferToBase64(noteBytes);
+  const leaf = await sha256Hex(noteB64);
+  const note = noteB64 + ":" + leaf;
+  state.notes.push(note);
+  state.leaves.push(leaf);
+  saveState();
+  log('Deposit created — note copied to clipboard (for convenience).');
+  await navigator.clipboard.writeText(note).catch(()=>log('Copy failed — manually copy displayed note.'));
+  renderAll();
+  debugAlert(`NOTE (copy and store):\n\n${note}`);
+});
+
+id('btnShowNotes').addEventListener('click', ()=>{ renderNotes(true); });
+
+id('btnWithdraw').addEventListener('click', async ()=>{
+  const note = id('noteInput').value.trim();
+  const dest = id('destAddr').value.trim() || 'dst_mock_1';
+  if(!note){ log('Paste your note to withdraw.',true); return; }
+  const [nB64, leafFromNote] = note.split(':');
+  const leaf = await sha256Hex(nB64);
+  if(leaf !== leafFromNote){ log('Note seems invalid (leaf mismatch).', true); return; }
+
+  // find leaf index
+  const idx = state.leaves.indexOf(leaf);
+  if(idx === -1){ log('Leaf not found in pool - maybe already withdrawn or invalid note.', true); return; }
+
+  // create merkle proof (sibling path)
+  const proof = await makeMerkleProof(state.leaves, idx);
+  const root = await calcMerkleRoot(state.leaves);
+  const nullifier = await sha256Hex('null:'+note);
+
+  // verify proof locally (simulate on-chain verify)
+  const ok = await verifyMerkleProof(leaf, proof, root, idx);
+  if(!ok){ log('Proof verification failed (local).', true); return; }
+
+  // check nullifier
+  if(state.nulls.includes(nullifier)){ log('Nullifier already used — double withdraw blocked.', true); return; }
+
+  // process withdraw
+  state.nulls.push(nullifier);
+  // remove leaf to simulate consumed note (for demo simplicity)
+  state.leaves.splice(idx,1);
+  // also remove local copy of note if present
+  state.notes = state.notes.filter(n=>n!==note);
+  saveState();
+  renderAll();
+  log(`Withdraw SUCCESS to ${dest}. root: ${root.substr(0,12)}...`);
+});
+
+id('btnVerify').addEventListener('click', async ()=>{
+  const note = id('noteInput').value.trim();
+  if(!note){ log('Paste note to verify.',true); return; }
+  const [nB64, leafFromNote] = note.split(':');
+  const leaf = await sha256Hex(nB64);
+  const idx = state.leaves.indexOf(leaf);
+  if(idx === -1){ log('Leaf not found — cannot build proof.', true); return; }
+  const proof = await makeMerkleProof(state.leaves, idx);
+  const root = await calcMerkleRoot(state.leaves);
+  const ok = await verifyMerkleProof(leaf, proof, root, idx);
+  log('Verify result: ' + (ok ? '✅ proof valid (local)' : '❌ invalid proof'), !ok);
+});
+
+// helpers
+function id(s){ return document.getElementById(s); }
+function log(msg, isError=false){
+  const line = document.createElement('div');
+  line.innerHTML = (isError?'<span class="danger">[ERR]</span> ':'') + escapeHtml(msg);
+  logEl.prepend(line);
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function saveState(){ localStorage.setItem('bs_leaves', JSON.stringify(state.leaves)); localStorage.setItem('bs_notes', JSON.stringify(state.notes)); localStorage.setItem('bs_nulls', JSON.stringify(state.nulls)); }
+function renderAll(){
+  (async ()=>{
+    const root = await calcMerkleRoot(state.leaves);
+    rootEl.textContent = root || '—';
+    poolSizeEl.textContent = 'pool size: ' + state.leaves.length;
+    leavesBox.innerHTML = state.leaves.length ? state.leaves.map((l,i)=>`<div>#${i} <span class="mono">${l.substr(0,14)}...</span></div>`).join('') : '<div class="muted tiny">no leaves yet</div>';
+    renderNotes();
+    nullsBox.innerHTML = state.nulls.length? state.nulls.map(n=>`<div>${n.substr(0,12)}...</div>`).join('') : '<div class="muted tiny">none</div>';
+  })();
+}
+function renderNotes(showFull=false){
+  myNotesBox.innerHTML = state.notes.length ? state.notes.map((n,i)=>`<div style="margin-bottom:6px"><div class="mono small">${showFull?escapeHtml(n):escapeHtml(n.substr(0,18)+'...')}</div><div class="tiny"><button onclick="copyNote(${i})">Copy</button></div></div>`).join('') : '<div class="muted tiny">no notes stored</div>';
+}
+window.copyNote = async (i)=>{
+  const n = state.notes[i];
+  try{ await navigator.clipboard.writeText(n); log('Note copied.'); }catch{ log('Copy failed.'); }
+}
+function debugAlert(s){ setTimeout(()=>alert(s),50); }
+
+// crypto utilities
+async function sha256Hex(text){
+  const enc = new TextEncoder();
+  const data = enc.encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return buf2hex(hash);
+}
+function buf2hex(buffer) {
+  const bytes = new Uint8Array(buffer);
+  return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function arrayBufferToBase64(buf){
+  // buf may be Uint8Array
+  let binary = '';
+  const bytes = new Uint8Array(buf);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+// MERKLE (simple binary tree)
+async function calcMerkleRoot(leaves){
+  if(!leaves || leaves.length===0) return '';
+  let level = leaves.slice();
+  while(level.length > 1){
+    const next = [];
+    for(let i=0;i<level.length;i+=2){
+      const a = level[i];
+      const b = (i+1<level.length)?level[i+1]:level[i]; // duplicate on odd
+      const hash = await sha256Hex(a + b);
+      next.push(hash);
+    }
+    level = next;
+  }
+  return level[0];
+}
+
+async function makeMerkleProof(leaves, index){
+  // returns array of siblings and their positions (left/right) to reconstruct
+  let idx = index;
+  let level = leaves.slice();
+  const proof = [];
+  while(level.length > 1){
+    const siblings = [];
+    for(let i=0;i<level.length;i+=2){
+      const a = level[i];
+      const b = (i+1<level.length)?level[i+1]:level[i];
+      siblings.push([a,b]);
+    }
+    const pairIndex = Math.floor(idx/2);
+    const pair = siblings[pairIndex];
+    const isLeft = (idx % 2 === 0);
+    const sibling = isLeft ? pair[1] : pair[0];
+    proof.push({ sibling, isLeft });
+    // build next
+    const next = [];
+    for(const p of siblings){
+      next.push(await sha256Hex(p[0] + p[1]));
+    }
+    level = next;
+    idx = pairIndex;
+  }
+  return proof; // array from leaf->root
+}
+
+async function verifyMerkleProof(leaf, proof, root, index){
+  let computed = leaf;
+  let idx = index;
+  for(const step of proof){
+    if(idx % 2 === 0){
+      computed = await sha256Hex(computed + (step.sibling||computed));
+    } else {
+      computed = await sha256Hex((step.sibling||computed) + computed);
+    }
+    idx = Math.floor(idx/2);
+  }
+  return computed === root;
+}
+
+// boot: if no state, empty arrays
+if(!state.leaves) state.leaves=[];
+if(!state.notes) state.notes=[];
+if(!state.nulls) state.nulls=[];
+renderAll();
+</script>
+</body>
+</html>
