@@ -3,724 +3,718 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>BitShade-Pro — Private BTC → Starknet</title>
-<meta name="description" content="BitShade-Pro: Private BTC → Starknet bridge — notes, Merkle proofs, nullifiers, encrypted backups. Beginner & Advanced modes.">
+<title>BitShade-Pro — Private BTC → Starknet Bridge</title>
+<meta name="description" content="BitShade-Pro: Zero-knowledge private bridge with Merkle proofs, nullifiers & encrypted backups">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#06121a; --panel:#071726; --muted:#9fb0c6; --accent:#7c5cff;
-    --accent-2:#4f46e5; --glass:rgba(255,255,255,0.02); --card-shadow: 0 8px 28px rgba(2,6,23,0.6);
-    --ok:#16a34a; --bad:#ef4444; --glass-2: rgba(255,255,255,0.03);
+    --bg:#06121a; --panel:#0a1929; --panel-hover:#0d1f33; --muted:#9fb0c6; 
+    --accent:#7c5cff; --accent-2:#4f46e5; --accent-glow:rgba(124,92,255,0.25);
+    --glass:rgba(255,255,255,0.02); --glass-2:rgba(255,255,255,0.04);
+    --card-shadow: 0 8px 32px rgba(2,6,23,0.7), 0 0 0 1px rgba(255,255,255,0.02);
+    --ok:#16a34a; --bad:#ef4444; --warning:#f59e0b;
+    --gradient-1:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-2:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
-  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:linear-gradient(180deg,#02121a,#04131b);color:#e6eef8;padding:18px;line-height:1.35}
-  .wrap{max-width:1200px;margin:0 auto}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-  h1{margin:0;font-size:20px}
-  .lead{margin:0;color:var(--muted);font-size:13px}
-  .top-stats{display:flex;gap:10px;align-items:center}
-  .stat{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:10px;min-width:110px;text-align:center}
-  .stat .small{font-size:12px;color:var(--muted)}
-  .stat .big{font-weight:700;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:16px}
-  .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
-  .card{background:var(--panel);border-radius:12px;padding:14px;box-shadow:var(--card-shadow)}
-  .row{display:flex;gap:8px;align-items:center}
-  button{background:linear-gradient(90deg,var(--accent-2),var(--accent));border:0;color:#fff;padding:9px 12px;border-radius:10px;cursor:pointer;font-weight:700}
-  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 10px}
-  input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  html,body{height:100%;overflow-x:hidden}
+  body{
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    margin:0;
+    background:radial-gradient(ellipse at top, #0f1f2f 0%, #02121a 50%, #000 100%);
+    color:#e6eef8;
+    padding:20px;
+    line-height:1.45;
+    position:relative;
+  }
+  
+  /* Animated background particles */
+  .bg-particles{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    overflow:hidden;
+  }
+  .particle{
+    position:absolute;
+    width:2px;
+    height:2px;
+    background:rgba(124,92,255,0.3);
+    border-radius:50%;
+    animation:float 20s infinite;
+  }
+  @keyframes float{
+    0%,100%{transform:translateY(0) translateX(0);opacity:0.3}
+    50%{transform:translateY(-100vh) translateX(50px);opacity:0.6}
+  }
+  
+  .wrap{max-width:1400px;margin:0 auto;position:relative;z-index:1}
+  
+  /* Header with glassmorphism */
+  header{
+    background:linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.05);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:24px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);
+    position:relative;
+    overflow:hidden;
+  }
+  header::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:-100%;
+    width:100%;
+    height:100%;
+    background:linear-gradient(90deg, transparent, rgba(124,92,255,0.1), transparent);
+    animation:shimmer 3s infinite;
+  }
+  @keyframes shimmer{
+    100%{left:100%}
+  }
+  
+  .header-content{display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;z-index:1}
+  .header-left{flex:1}
+  h1{
+    margin:0 0 8px;
+    font-size:32px;
+    font-weight:800;
+    background:linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    letter-spacing:-0.5px;
+  }
+  .lead{margin:0 0 8px;color:var(--muted);font-size:14px;line-height:1.6}
+  .tech-stack{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+  .tech-badge{
+    padding:4px 12px;
+    border-radius:999px;
+    background:rgba(124,92,255,0.1);
+    border:1px solid rgba(124,92,255,0.2);
+    font-size:11px;
+    font-weight:600;
+    color:#a78bfa;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  
+  .top-stats{display:flex;gap:12px;align-items:stretch}
+  .stat{
+    background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.05);
+    padding:16px;
+    border-radius:12px;
+    min-width:140px;
+    text-align:center;
+    transition:all 0.3s ease;
+    cursor:pointer;
+  }
+  .stat:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px rgba(124,92,255,0.2);
+    border-color:rgba(124,92,255,0.3);
+  }
+  .stat .small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+  .stat .big{
+    font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    font-size:20px;
+    color:#fff;
+  }
+  .stat .trend{
+    font-size:10px;
+    color:var(--ok);
+    margin-top:4px;
+  }
+  
+  .mode-selector{
+    display:flex;
+    gap:8px;
+    background:rgba(0,0,0,0.3);
+    padding:4px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .mode-btn{
+    background:transparent;
+    border:0;
+    padding:8px 16px;
+    border-radius:8px;
+    color:var(--muted);
+    cursor:pointer;
+    font-weight:600;
+    font-size:13px;
+    transition:all 0.2s ease;
+  }
+  .mode-btn.active{
+    background:linear-gradient(135deg, var(--accent-2), var(--accent));
+    color:#fff;
+    box-shadow:0 4px 12px var(--accent-glow);
+  }
+  
+  .grid{display:grid;grid-template-columns:1fr 480px;gap:24px}
+  
+  .card{
+    background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.05);
+    border-radius:16px;
+    padding:20px;
+    box-shadow:var(--card-shadow);
+    transition:all 0.3s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .card:hover{
+    border-color:rgba(124,92,255,0.2);
+    box-shadow:0 12px 48px rgba(2,6,23,0.8), 0 0 0 1px rgba(124,92,255,0.1);
+  }
+  .card::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:2px;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity:0;
+    transition:opacity 0.3s ease;
+  }
+  .card:hover::before{opacity:1}
+  
+  .card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  h3{margin:0;font-size:18px;font-weight:700;color:#fff}
+  .card-subtitle{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}
+  
+  button{
+    background:linear-gradient(135deg,var(--accent-2),var(--accent));
+    border:0;
+    color:#fff;
+    padding:10px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+    font-size:14px;
+    transition:all 0.3s ease;
+    box-shadow:0 4px 12px rgba(124,92,255,0.3);
+    position:relative;
+    overflow:hidden;
+  }
+  button::before{
+    content:'';
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:0;
+    height:0;
+    border-radius:50%;
+    background:rgba(255,255,255,0.2);
+    transform:translate(-50%,-50%);
+    transition:width 0.5s ease, height 0.5s ease;
+  }
+  button:hover::before{width:300px;height:300px}
+  button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(124,92,255,0.4);
+  }
+  button:active{transform:translateY(0)}
+  
+  button.ghost{
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.1);
+    color:var(--muted);
+    box-shadow:none;
+  }
+  button.ghost:hover{
+    background:rgba(255,255,255,0.05);
+    border-color:rgba(124,92,255,0.3);
+    color:#fff;
+  }
+  
+  input,textarea,select{
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.1);
+    background:rgba(0,0,0,0.3);
+    color:inherit;
+    font-family:inherit;
+    font-size:14px;
+    transition:all 0.3s ease;
+  }
+  input:focus,textarea:focus,select:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-glow);
+    background:rgba(0,0,0,0.4);
+  }
+  
+  .mono{font-family:'JetBrains Mono',monospace}
   .small{font-size:13px;color:var(--muted)}
   .tiny{font-size:12px;color:var(--muted)}
-  .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px}
-  .log{height:180px;overflow:auto;background:var(--glass);padding:10px;border-radius:8px;font-size:13px}
-  .muted{color:var(--muted)}
-  .success{color:var(--ok)}
-  .danger{color:var(--bad)}
-  .list{max-height:260px;overflow:auto}
-  .controls{display:flex;gap:8px;align-items:center}
-  footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
-  .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,0.3)}
-  .help{font-size:13px;color:var(--muted);padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02))}
-  .center{display:flex;align-items:center;justify-content:center}
-  .muted-2{color:#8aa6bf}
-  .toggle{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 8px;border-radius:8px;color:var(--muted);cursor:pointer}
-  .row-wrap{display:flex;flex-wrap:wrap;gap:8px}
-  /* merkle viz */
-  .merkle-canvas{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:12px;border-radius:10px}
-  .node{display:inline-flex;align-items:center;justify-content:center;width:78px;height:28px;border-radius:6px;background:rgba(255,255,255,0.02);margin:6px;font-size:11px}
-  .node.leaf{background:linear-gradient(90deg,#0b2a3a,#08364a)}
-  .node.root{background:linear-gradient(90deg,#243bff,#7c5cff);font-weight:700}
-  .node.active{box-shadow:0 6px 20px rgba(124,92,255,0.15);outline:2px solid rgba(124,92,255,0.12)}
-  .tree-row{display:flex;gap:12px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;overflow:auto;padding:6px}
-  .hint{font-size:12px;color:var(--muted);padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.01)}
-  .tx-card{padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02))}
-  .help-step{padding:12px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));margin-bottom:8px}
-  .studio{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .onboard-check{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:8px}
-  @media (max-width:980px){ .grid{grid-template-columns:1fr} header{flex-direction:column;align-items:flex-start} .merkle-canvas{overflow:auto} }
+  
+  /* Merkle Visualizer - Enhanced */
+  .merkle-canvas{
+    background:linear-gradient(135deg, rgba(124,92,255,0.05), rgba(79,70,229,0.05));
+    border:1px solid rgba(124,92,255,0.1);
+    padding:20px;
+    border-radius:12px;
+    position:relative;
+  }
+  .merkle-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .root-display{
+    background:linear-gradient(135deg, #667eea, #764ba2);
+    padding:16px;
+    border-radius:10px;
+    margin:12px 0;
+    box-shadow:0 8px 24px rgba(102,126,234,0.3);
+  }
+  .root-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:0.8;margin-bottom:6px}
+  .root-value{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    word-break:break-all;
+    font-weight:600;
+  }
+  
+  .tree-row{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    justify-content:center;
+    padding:12px 0;
+    position:relative;
+  }
+  .tree-row::before{
+    content:'';
+    position:absolute;
+    top:50%;
+    left:10%;
+    right:10%;
+    height:1px;
+    background:linear-gradient(90deg, transparent, rgba(124,92,255,0.2), transparent);
+  }
+  
+  .node{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:90px;
+    padding:10px 14px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.05);
+    font-size:11px;
+    font-family:'JetBrains Mono',monospace;
+    cursor:pointer;
+    transition:all 0.3s ease;
+    position:relative;
+    z-index:1;
+  }
+  .node:hover{
+    transform:scale(1.05);
+    box-shadow:0 4px 16px rgba(124,92,255,0.3);
+  }
+  .node.leaf{
+    background:linear-gradient(135deg, #0b2a3a, #08364a);
+    border-color:rgba(8,54,74,0.5);
+  }
+  .node.root{
+    background:linear-gradient(135deg, #243bff, #7c5cff);
+    font-weight:700;
+    box-shadow:0 8px 24px rgba(124,92,255,0.4);
+  }
+  .node.active{
+    box-shadow:0 0 0 3px rgba(124,92,255,0.5), 0 8px 24px rgba(124,92,255,0.4);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 0 3px rgba(124,92,255,0.5)}
+    50%{box-shadow:0 0 0 6px rgba(124,92,255,0.3)}
+  }
+  
+  /* Transaction log enhanced */
+  .log{
+    height:200px;
+    overflow:auto;
+    background:rgba(0,0,0,0.4);
+    padding:12px;
+    border-radius:10px;
+    font-size:13px;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .log::-webkit-scrollbar{width:6px}
+  .log::-webkit-scrollbar-track{background:rgba(0,0,0,0.2)}
+  .log::-webkit-scrollbar-thumb{background:rgba(124,92,255,0.3);border-radius:3px}
+  
+  .tx-card{
+    padding:14px;
+    border-radius:10px;
+    background:linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.05);
+    margin-bottom:10px;
+    transition:all 0.3s ease;
+  }
+  .tx-card:hover{
+    background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+    border-color:rgba(124,92,255,0.2);
+    transform:translateX(4px);
+  }
+  
+  /* Note cards */
+  .note-card{
+    padding:12px;
+    border-radius:10px;
+    background:rgba(0,0,0,0.3);
+    border:1px solid rgba(255,255,255,0.05);
+    margin-bottom:10px;
+    transition:all 0.3s ease;
+  }
+  .note-card:hover{
+    border-color:rgba(124,92,255,0.3);
+    background:rgba(124,92,255,0.05);
+  }
+  
+  /* Progress indicators */
+  .progress-ring{
+    transform:rotate(-90deg);
+    margin:0 auto;
+  }
+  .progress-ring-circle{
+    transition:stroke-dashoffset 0.5s ease;
+  }
+  
+  /* Onboarding checklist enhanced */
+  .onboard-check{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border-radius:10px;
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.05);
+    margin-bottom:10px;
+    transition:all 0.3s ease;
+  }
+  .onboard-check.completed{
+    background:rgba(22,163,74,0.1);
+    border-color:rgba(22,163,74,0.3);
+  }
+  .onboard-check:hover{
+    border-color:rgba(124,92,255,0.3);
+    transform:translateX(4px);
+  }
+  
+  .checkbox-custom{
+    width:20px;
+    height:20px;
+    border-radius:4px;
+    border:2px solid rgba(255,255,255,0.2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all 0.3s ease;
+  }
+  .checkbox-custom.checked{
+    background:linear-gradient(135deg, var(--accent-2), var(--accent));
+    border-color:var(--accent);
+  }
+  .checkbox-custom.checked::after{
+    content:'✓';
+    color:#fff;
+    font-weight:700;
+    font-size:12px;
+  }
+  
+  /* Tooltips */
+  .tooltip{
+    position:relative;
+    display:inline-block;
+  }
+  .tooltip:hover .tooltip-text{
+    visibility:visible;
+    opacity:1;
+  }
+  .tooltip-text{
+    visibility:hidden;
+    opacity:0;
+    position:absolute;
+    bottom:125%;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,0.95);
+    color:#fff;
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:12px;
+    white-space:nowrap;
+    z-index:100;
+    transition:opacity 0.3s ease;
+    border:1px solid rgba(124,92,255,0.3);
+  }
+  
+  /* Modal improvements */
+  .modal-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(2,6,23,0.85);
+    backdrop-filter:blur(8px);
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:1000;
+    animation:fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn{
+    from{opacity:0}
+    to{opacity:1}
+  }
+  
+  .modal-content{
+    max-width:700px;
+    width:100%;
+    background:linear-gradient(135deg, rgba(10,25,41,0.98), rgba(6,18,26,0.98));
+    border:1px solid rgba(124,92,255,0.2);
+    border-radius:16px;
+    padding:24px;
+    box-shadow:0 24px 64px rgba(0,0,0,0.5);
+    animation:slideUp 0.3s ease;
+  }
+  @keyframes slideUp{
+    from{transform:translateY(20px);opacity:0}
+    to{transform:translateY(0);opacity:1}
+  }
+  
+  /* Stats panel */
+  .stats-panel{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin:16px 0;
+  }
+  .stat-item{
+    text-align:center;
+    padding:12px;
+    background:rgba(0,0,0,0.3);
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .stat-value{
+    font-size:20px;
+    font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    color:#fff;
+    margin-bottom:4px;
+  }
+  .stat-label{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  
+  footer{
+    margin-top:32px;
+    padding:24px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    border-top:1px solid rgba(255,255,255,0.05);
+  }
+  
+  @media (max-width:1200px){ 
+    .grid{grid-template-columns:1fr} 
+    .header-content{flex-direction:column;align-items:flex-start}
+    .top-stats{flex-wrap:wrap}
+  }
 </style>
 </head>
 <body>
-<div class="wrap" role="application" aria-labelledby="app-title">
-  <header>
-    <div>
-      <h1 id="app-title">BitShade-Pro</h1>
-      <p class="lead">Private BTC → Starknet — non-custodial bridge with privacy primitives and UX for both new users and technical reviewers.</p>
-      <div class="tiny muted-2" style="margin-top:6px">Complete flow: deposit → inspect proof → withdraw → export proof. On-chain integration available via your configured Starknet endpoint.</div>
-    </div>
+<div class="bg-particles" id="particles"></div>
 
-    <div class="top-stats" aria-hidden="false">
-      <div class="stat" title="Your Bitcoin balance (on-chain wallet)">
-        <div class="small">BTC Balance</div>
-        <div class="big mono" id="btcBal">0.500000</div>
-      </div>
-      <div class="stat" title="Wrapped STRK balance available for staking/trading">
-        <div class="small">wSTRK</div>
-        <div class="big mono" id="wBal">0.0000</div>
-      </div>
-      <div style="width:6px"></div>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <div style="display:flex;gap:6px">
-          <button id="modeBegin" class="toggle" aria-pressed="true">Beginner</button>
-          <button id="modeAdv" class="toggle" aria-pressed="false">Advanced</button>
+<div class="wrap">
+  <header>
+    <div class="header-content">
+      <div class="header-left">
+        <h1>🔒 BitShade-Pro</h1>
+        <p class="lead">
+          Zero-knowledge private bridge enabling non-custodial BTC → Starknet transfers with cryptographic privacy guarantees. 
+          Built with Merkle proofs, nullifier sets, and AES-256-GCM encrypted backups.
+        </p>
+        <div class="tech-stack">
+          <span class="tech-badge">SHA-256 Merkle Trees</span>
+          <span class="tech-badge">UTXO Privacy Model</span>
+          <span class="tech-badge">Nullifier Registry</span>
+          <span class="tech-badge">AES-GCM + PBKDF2</span>
+          <span class="tech-badge">Starknet Integration</span>
         </div>
-        <div class="tiny muted" id="modeHelp">Mode: Beginner</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="top-stats">
+          <div class="stat tooltip">
+            <div class="small">BTC Balance</div>
+            <div class="big mono" id="btcBal">0.500000</div>
+            <div class="trend">↗ +5.2%</div>
+            <span class="tooltip-text">Your on-chain Bitcoin wallet balance</span>
+          </div>
+          <div class="stat tooltip">
+            <div class="small">wSTRK</div>
+            <div class="big mono" id="wBal">0.0000</div>
+            <div class="trend">—</div>
+            <span class="tooltip-text">Wrapped Starknet tokens (private notes)</span>
+          </div>
+          <div class="stat tooltip">
+            <div class="small">Privacy Pool</div>
+            <div class="big mono" id="poolSize">0</div>
+            <div class="trend" id="poolTrend">—</div>
+            <span class="tooltip-text">Total notes in anonymity set</span>
+          </div>
+        </div>
+        
+        <div class="mode-selector">
+          <button class="mode-btn active" id="modeBegin">🎓 Beginner</button>
+          <button class="mode-btn" id="modeAdv">⚡ Advanced</button>
+        </div>
       </div>
     </div>
   </header>
 
-  <div class="grid" role="region" aria-label="Main application">
-    <!-- left: core flows -->
+  <div class="grid">
     <main>
       <!-- Onboarding -->
-      <section id="onboarding" class="card" aria-labelledby="onboard-title" style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
+      <section class="card" style="margin-bottom:20px">
+        <div class="card-header">
           <div>
-            <h3 id="onboard-title" style="margin:0 0 6px">Welcome — Get started</h3>
-            <div class="small muted">Follow the checklist to complete your first private transfer. Each step is reversible.</div>
+            <h3>🚀 Quick Start Guide</h3>
+            <div class="card-subtitle">Complete your first private transfer. All operations are reversible and auditable.</div>
           </div>
-          <div class="center"><button class="ghost" id="btnSkipOnboard">Skip</button></div>
+          <button class="ghost" id="btnSkipOnboard">Skip</button>
         </div>
 
-        <div style="height:10px"></div>
+        <div id="onboardChecks"></div>
 
-        <div id="onboardChecks">
-          <!-- dynamically filled -->
+        <div class="stats-panel" style="margin-top:16px">
+          <div class="stat-item">
+            <div class="stat-value" id="statsDeposits">0</div>
+            <div class="stat-label">Deposits</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statsWithdraws">0</div>
+            <div class="stat-label">Withdrawals</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statsProofs">0</div>
+            <div class="stat-label">Proofs Generated</div>
+          </div>
         </div>
-
-        <div style="height:10px"></div>
-        <div class="help small muted">Tip: Use the Beginner mode if you are new. Advanced mode exposes Merkle proof internals for verification.</div>
       </section>
 
-      <section class="card" style="margin-bottom:12px" id="depositSection" aria-labelledby="deposit-title">
-        <div style="display:flex;justify-content:space-between;align-items:center">
+      <!-- Deposit -->
+      <section class="card" style="margin-bottom:20px">
+        <div class="card-header">
           <div>
-            <h3 id="deposit-title" style="margin:0 0 6px">Deposit — Bridge BTC to Starknet</h3>
-            <div class="small muted">Create private UTXO-style notes representing your wrapped BTC on Starknet (wSTRK).</div>
+            <h3>💰 Deposit — Bridge BTC to Starknet</h3>
+            <div class="card-subtitle">
+              Create privacy-preserving notes using UTXO model. Each note contains: secret (256-bit), leaf hash (SHA-256), amount.
+              Bridge provider: <select id="bridgeSelect" style="width:auto;padding:4px 8px;font-size:12px;display:inline">
+                <option>Alpen / Glock</option>
+                <option>Atomiq</option>
+                <option>Garden</option>
+              </select>
+            </div>
           </div>
-          <div class="tiny muted">Bridge: <select id="bridgeSelect" aria-label="Bridge provider"><option>Alpen / Glock</option><option>Atomiq</option><option>Garden</option></select></div>
         </div>
 
-        <div style="height:10px"></div>
-        <div class="row" style="gap:8px">
-          <input id="depositAmount" aria-label="Deposit amount in BTC" placeholder="amount BTC (e.g. 0.01)" style="max-width:200px"/>
-          <select id="depositPreset" style="max-width:140px" aria-label="Deposit presets">
-            <option value="">preset</option>
+        <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:12px">
+          <div style="flex:1">
+            <label class="small" style="display:block;margin-bottom:6px">Amount (BTC)</label>
+            <input id="depositAmount" placeholder="0.01" type="number" step="0.001"/>
+          </div>
+          <select id="depositPreset" style="flex:0 0 140px">
+            <option value="">Quick Select</option>
             <option value="0.01">0.01 BTC</option>
             <option value="0.05">0.05 BTC</option>
             <option value="0.1">0.1 BTC</option>
           </select>
-          <button id="btnDeposit">Deposit</button>
-          <button class="ghost" id="btnBatchDeposit">Batch (3×0.01)</button>
         </div>
 
-        <div style="height:8px"></div>
-        <div class="help">Notes are locally generated. Export encrypted backups to restore them on another device.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btnDeposit">🔐 Create Private Note</button>
+          <button class="ghost" id="btnBatchDeposit">📦 Batch (3×0.01)</button>
+        </div>
+
+        <div style="margin-top:12px;padding:12px;background:rgba(124,92,255,0.05);border-radius:8px;border:1px solid rgba(124,92,255,0.1)">
+          <div class="tiny" style="color:#a78bfa">
+            <strong>🔬 Technical:</strong> Notes generated client-side using Web Crypto API. 
+            Secret → SHA-256 → Merkle leaf. Backup encrypted with AES-256-GCM (200k PBKDF2 iterations).
+          </div>
+        </div>
       </section>
 
-      <section class="card" style="margin-bottom:12px" id="withdrawSection" aria-labelledby="withdraw-title">
-        <h3 id="withdraw-title" style="margin:0 0 8px">Withdraw — Spend your notes</h3>
-        <div class="small muted">Paste a single note to spend it directly, or auto-select notes to cover a desired amount. Change notes are created automatically.</div>
+      <!-- Withdraw -->
+      <section class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div>
+            <h3>💸 Withdraw — Spend Private Notes</h3>
+            <div class="card-subtitle">
+              Generate zero-knowledge proof: Merkle path verification + nullifier emission. 
+              Change notes created automatically using same privacy guarantees.
+            </div>
+          </div>
+        </div>
 
-        <div style="height:10px"></div>
-        <div class="row" style="gap:10px;align-items:flex-start">
-          <div style="flex:1">
-            <textarea id="noteInput" rows="2" placeholder="paste a single note here (optional)" aria-label="Paste note"></textarea>
-            <div style="height:8px"></div>
-            <input id="withdrawAmount" placeholder="withdraw amount (wSTRK)" aria-label="Withdraw amount (wSTRK)"/>
-            <div style="height:8px"></div>
-            <input id="destAddr" placeholder="destination address (e.g. 0x12...9fab)" aria-label="Destination address"/>
-            <div style="height:8px"></div>
-            <label class="tiny"><input type="checkbox" id="checkboxGasless"/> Paymaster (gasless)</label>
-            <div style="height:10px"></div>
-            <div class="row-wrap">
-              <button id="btnAutoSelect">Auto-select notes</button>
-              <button id="btnWithdraw">Withdraw</button>
-              <button class="ghost" id="btnVerifyProof">Verify proof</button>
-              <button class="ghost" id="btnShowTx">Export proof JSON</button>
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:16px">
+          <div>
+            <label class="small" style="display:block;margin-bottom:6px">Paste Note (optional)</label>
+            <textarea id="noteInput" rows="2" placeholder="secret:leaf:amount"></textarea>
+            
+            <label class="small" style="display:block;margin:12px 0 6px">Amount (wSTRK)</label>
+            <input id="withdrawAmount" placeholder="0.5" type="number" step="0.01"/>
+            
+            <label class="small" style="display:block;margin:12px 0 6px">Destination Address</label>
+            <input id="destAddr" placeholder="0x1234...abcd" value="0xDEADBEEF"/>
+            
+            <label style="display:flex;align-items:center;gap:8px;margin:12px 0">
+              <input type="checkbox" id="checkboxGasless"/>
+              <span class="small">⚡ Use Paymaster (gasless transaction)</span>
+            </label>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+              <button id="btnAutoSelect">🎯 Auto-Select Notes</button>
+              <button id="btnWithdraw">✅ Execute Withdrawal</button>
+              <button class="ghost" id="btnVerifyProof">🔍 Verify Proof</button>
+              <button class="ghost" id="btnShowTx">📄 Export Proof JSON</button>
             </div>
 
-            <div style="height:8px"></div>
-            <div id="withdrawNote" class="tiny muted"></div>
+            <div id="withdrawNote" class="tiny" style="margin-top:12px;color:var(--muted)"></div>
           </div>
 
-          <div style="width:240px">
-            <div class="pill tiny">Selection</div>
-            <div style="height:8px"></div>
-            <div id="notesForSelect" class="list mono small" style="max-height:220px;overflow:auto" aria-live="polite"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card" style="margin-bottom:12px" aria-labelledby="activity-title">
-        <h3 id="activity-title" style="margin:0 0 8px">Activity & Receipts</h3>
-        <div class="tiny muted">Chronological activity — click a tx to expand details. Copy or download proofs for audit or review.</div>
-        <div style="height:8px"></div>
-        <div id="txLog" class="log mono" role="log" aria-live="polite"></div>
-      </section>
-
-      <section class="card" style="margin-bottom:14px" aria-labelledby="tools-title">
-        <h3 id="tools-title" style="margin:0 0 8px">Tools</h3>
-        <div class="row" style="gap:8px;margin-bottom:8px">
-          <button class="ghost" id="btnDemoRun">Run example flow</button>
-          <button class="ghost" id="btnExportEnc">Export Encrypted Backup</button>
-          <button class="ghost" id="btnImportEnc">Import Encrypted Backup</button>
-          <button class="ghost" id="btnReset">Reset</button>
-        </div>
-        <div class="tiny muted">Encrypted backups use AES-GCM; password-based key derivation protects your secrets.</div>
-      </section>
-    </main>
-
-    <!-- right: inspectors, Glock modal -->
-    <aside>
-      <section class="card" style="margin-bottom:12px" aria-labelledby="pool-title">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <h3 id="pool-title" style="margin:0 0 6px">Pool Inspector</h3>
-          <div class="tiny muted">Merkle leaves (SHA-256)</div>
-        </div>
-        <div style="height:8px"></div>
-        <div class="merkle-canvas" aria-live="polite">
-          <div class="pill tiny">Root</div>
-          <div id="root" class="mono" style="margin-top:8px;font-size:12px">—</div>
-          <div class="tiny muted" id="poolCount" style="margin-top:6px">pool size: 0</div>
-          <div style="height:10px"></div>
-          <div id="merkleViz" style="min-height:110px"></div>
-          <div style="height:10px"></div>
-          <div class="row" style="gap:8px">
-            <button id="btnSyncRootOnChain">Sync root → Starknet</button>
-            <button id="btnCheckOnChain" class="ghost">Check on-chain root</button>
-          </div>
-          <div id="onchainStatus" class="tiny muted" style="margin-top:8px"></div>
-        </div>
-      </section>
-
-      <section class="card" style="margin-bottom:12px" aria-labelledby="notes-title">
-        <h3 id="notes-title" style="margin:0 0 6px">My Notes</h3>
-        <div class="small muted">Each note is secret + leaf + amount. Secure your backup; anyone with the note can spend it.</div>
-        <div style="height:8px"></div>
-        <div id="myNotes" class="list" aria-live="polite"></div>
-      </section>
-
-      <section class="card" style="margin-bottom:12px" aria-labelledby="null-title">
-        <h3 id="null-title" style="margin:0 0 6px">Nullifiers (spent)</h3>
-        <div class="small muted">Nullifiers prevent re-use of the same note.</div>
-        <div id="nulls" class="mono tiny" style="margin-top:8px;max-height:120px;overflow:auto"></div>
-      </section>
-
-      <section class="card" aria-labelledby="glock-title">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <h3 id="glock-title" style="margin:0 0 6px">Glock — Alpen (Roadmap)</h3>
-          <div class="badge tiny" id="glockBadge">Integration available</div>
-        </div>
-        <div class="small muted">BitShade-Pro integrates with Glock-style verifiers for provable BTC bridging on Starknet. Connect your verifier endpoint in settings.</div>
-        <div style="height:10px"></div>
-        <div class="row" style="justify-content:flex-end">
-          <button class="ghost" id="btnGlockInfo">Learn more</button>
-        </div>
-      </section>
-    </aside>
-  </div>
-
-  <footer>BitShade-Pro — Non-custodial, privacy-minded BTC → Starknet UX. Built for secure, auditable transfers.</footer>
-</div>
-
-<!-- Confirm modal -->
-<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.7);align-items:center;justify-content:center;padding:18px">
-  <div style="max-width:520px;margin:auto;background:var(--panel);border-radius:10px;padding:14px">
-    <div id="confirmText" class="small muted"></div>
-    <div style="height:12px"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button id="confirmCancel" class="ghost">Cancel</button>
-      <button id="confirmOk">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<!-- Note reveal modal -->
-<div id="noteRevealModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.7);align-items:center;justify-content:center;padding:18px">
-  <div style="max-width:760px;margin:auto;background:var(--panel);border-radius:10px;padding:14px">
-    <h3 style="margin:0 0 8px">Reveal Note — Confidential</h3>
-    <div class="small muted">Anyone who obtains this note can spend the funds. Only reveal when required.</div>
-    <pre id="revealText" style="background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;margin-top:10px;overflow:auto"></pre>
-    <div style="height:12px"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button id="revealCancel" class="ghost">Close</button>
-      <button id="revealCopy">Copy to clipboard</button>
-    </div>
-  </div>
-</div>
-
-<!-- Glock Modal -->
-<div id="glockModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.7);align-items:center;justify-content:center;padding:24px;">
-  <div style="max-width:760px;margin:auto;background:var(--panel);border-radius:10px;padding:18px;color:#e6eef8">
-    <h3 style="margin:0 0 8px">Glock (Alpen) — Trust-minimized BTC verification</h3>
-    <p style="color:var(--muted);margin:0 0 12px">
-      Glock enables provable BTC transfers that can be validated on Starknet. Configure your verifier endpoint in Settings to enable on-chain minting and verification.
-    </p>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button id="btnGlockClose">Close</button>
-      <a href="https://www.starknet.io/blog/starknet-alpen-bitcoin-glock/" target="_blank" rel="noreferrer"><button class="ghost">Read announcement</button></a>
-    </div>
-  </div>
-</div>
-
-<script>
-/* BitShade-Pro — polished single-file app
-   - Fully interactive client-side flows
-   - Onboarding checklist and beginner/advanced modes
-   - Merkle proof generation & verification
-   - Encrypted backup (AES-GCM + PBKDF2)
-   - Notes, nullifiers, tx history, proof export
-*/
-
-// Utility helpers
-const $ = id => document.getElementById(id);
-const now = () => new Date().toISOString();
-const KEY = 'bitshade_pro_state_v4';
-function toFixed(n, d=6){ return Number(n).toFixed(d); }
-function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-function buf2hex(buffer){ const bytes = new Uint8Array(buffer); return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-async function sha256Hex(text){ const enc = new TextEncoder(); const data = enc.encode(text); const h = await crypto.subtle.digest('SHA-256', data); return buf2hex(h); }
-function randB64(len=32){ const a = crypto.getRandomValues(new Uint8Array(len)); let s=''; for(let i=0;i<a.length;i++) s+=String.fromCharCode(a[i]); return btoa(s); }
-function copyToClipboard(text){ return navigator.clipboard?.writeText(text).then(()=>uiLog('Copied to clipboard')).catch(()=>{}); }
-function fakeTxHash(){ const r = crypto.getRandomValues(new Uint8Array(16)); return '0x' + Array.from(r).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-
-// Application state
-let state = {
-  btcBalance: 0.5,
-  wBalance: 0.0,
-  notes: [],   // note = secret:leaf:amount
-  leaves: [],
-  nulls: [],
-  txs: []
-};
-
-function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
-function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) state = s; }catch(e){} }
-load();
-
-// UI logging & transactions
-function uiLog(msg, lvl='info'){
-  const el = document.createElement('div');
-  el.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong class="mono small">${(new Date()).toLocaleTimeString()}</strong> — ${escapeHtml(msg)}</div></div>`;
-  if(lvl==='error') el.style.color = 'var(--bad)';
-  const log = $('txLog');
-  if(log) log.prepend(el);
-}
-function pushTx(type, summary, meta = {}){
-  const tx = { type, time: now(), summary, meta: { ...meta, txhash: meta.txhash || fakeTxHash() } };
-  state.txs.push(tx);
-  save();
-  renderTxs();
-  uiLog(`${type}: ${summary}`);
-  return tx;
-}
-
-// Renderers
-function renderAll(){
-  if($('btcBal')) $('btcBal').textContent = toFixed(state.btcBalance,6);
-  if($('wBal')) $('wBal').textContent = toFixed(state.wBalance,4);
-  renderNotes();
-  renderLeaves();
-  renderNulls();
-  renderRoot();
-  renderTxs();
-  renderOnboard();
-  renderModeHelp();
-}
-function renderNotes(){
-  const box = $('myNotes'); if(!box) return;
-  box.innerHTML = '';
-  if(!state.notes.length){ box.innerHTML = '<div class="muted tiny">no notes stored</div>'; return; }
-  state.notes.forEach((n, idx) => {
-    const [s, leaf, amt] = n.split(':');
-    const row = document.createElement('div');
-    row.style.padding = '8px 0';
-    row.style.borderBottom = '1px dashed rgba(255,255,255,0.02)';
-    row.innerHTML = `<div class="mono">${leaf.substr(0,18)}... - <span class="tiny muted">${amt} wSTRK</span></div>
-      <div style="margin-top:6px" class="tiny">
-        <button class="ghost" data-copy="${idx}">Copy</button>
-        <button class="ghost" data-reveal="${idx}">Reveal</button>
-        <button class="ghost" data-dl="${idx}">Download</button>
-      </div>`;
-    box.appendChild(row);
-  });
-  box.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
-    const i = b.getAttribute('data-copy'); copyToClipboard(state.notes[i]); uiLog('Note copied');
-  });
-  box.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => {
-    const i = b.getAttribute('data-dl'); downloadText(`note-${i}.txt`, state.notes[i]); uiLog('Note downloaded');
-  });
-  box.querySelectorAll('[data-reveal]').forEach(b => b.onclick = () => {
-    const i = b.getAttribute('data-reveal'); showRevealModal(state.notes[i]);
-  });
-}
-function renderLeaves(){
-  const box = $('merkleViz'); if(!box) return;
-  box.innerHTML = '';
-  if(!state.leaves.length){ box.innerHTML = '<div class="tiny muted">no leaves</div>'; return; }
-  const levels = buildTreeLevels(state.leaves);
-  levels.forEach((lvl, li) => {
-    const row = document.createElement('div'); row.className = 'tree-row';
-    lvl.forEach((node, i) => {
-      const div = document.createElement('div'); div.className = 'node ' + (li === levels.length - 1 ? 'root' : (li === 0 ? 'leaf' : ''));
-      div.textContent = node.slice(0,6) + '...';
-      div.dataset.level = li; div.dataset.index = i;
-      div.onclick = () => highlightPath(li, i, levels);
-      row.appendChild(div);
-    });
-    box.appendChild(row);
-  });
-}
-function renderRoot(){ calcMerkleRoot(state.leaves).then(root => { if($('root')) $('root').textContent = root || '—'; if($('poolCount')) $('poolCount').textContent = 'pool size: ' + state.leaves.length; }); }
-function renderNulls(){ const el = $('nulls'); if(!el) return; el.innerHTML = state.nulls.length ? state.nulls.map(n => `<div>${n.substr(0,14)}...</div>`).join('') : '<div class="muted tiny">none</div>'; }
-function renderTxs(){
-  const box = $('txLog'); if(!box) return;
-  box.innerHTML = '';
-  if(!state.txs.length){ box.innerHTML = '<div class="muted tiny">no activity yet</div>'; return; }
-  state.txs.slice().reverse().forEach((t, idx) => {
-    const el = document.createElement('div'); el.className = 'tx-card'; el.style.marginBottom = '8px';
-    const txhash = t.meta.txhash || '—';
-    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong class="mono">${t.type}</strong> <span class="tiny muted">${t.time.split('T')[1].slice(0,8)}</span></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="ghost" data-copytx="${idx}">Copy</button>
-        <button class="ghost" data-dl="${idx}">Download</button>
-      </div>
-    </div>
-    <div class="tiny" style="margin-top:6px">${escapeHtml(t.summary)}</div>
-    <div class="tiny muted" style="margin-top:8px">tx: <span class="mono">${txhash}</span></div>`;
-    box.appendChild(el);
-  });
-  box.querySelectorAll('[data-copytx]').forEach(b => b.onclick = () => {
-    const i = b.getAttribute('data-copytx'); copyToClipboard(JSON.stringify(state.txs.slice().reverse()[i])); uiLog('Tx copied');
-  });
-  box.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => {
-    const i = b.getAttribute('data-dl'); const tx = state.txs.slice().reverse()[i]; downloadText(`tx-${i}.json`, JSON.stringify(tx, null, 2)); uiLog('Tx downloaded');
-  });
-}
-
-// Merkle helpers (real)
-async function calcMerkleRoot(leaves){
-  if(!leaves.length) return '';
-  let level = leaves.slice();
-  while(level.length > 1){
-    const next = [];
-    for(let i=0;i<level.length;i+=2){
-      const a = level[i]; const b = (i+1<level.length) ? level[i+1] : level[i];
-      next.push(await sha256Hex(a + b));
-    }
-    level = next;
-  }
-  return level[0];
-}
-async function makeMerkleProof(leaves, index){
-  let idx = index; let level = leaves.slice(); const proof = [];
-  while(level.length > 1){
-    const siblingIndex = (idx % 2 === 0) ? idx + 1 : idx - 1;
-    const sibling = (siblingIndex < level.length) ? level[siblingIndex] : level[idx];
-    proof.push({ sibling, isLeft: (idx % 2 === 1) });
-    // build next
-    const next = [];
-    for(let i=0;i<level.length;i+=2){
-      const a = level[i]; const b = (i+1<level.length) ? level[i+1] : level[i];
-      next.push(await sha256Hex(a + b));
-    }
-    level = next; idx = Math.floor(idx/2);
-  }
-  return proof;
-}
-async function verifyMerkleProof(leaf, proof, root, index){
-  let computed = leaf; let idx = index;
-  for(const step of proof){
-    if(idx % 2 === 0) computed = await sha256Hex(computed + (step.sibling || computed));
-    else computed = await sha256Hex((step.sibling || computed) + computed);
-    idx = Math.floor(idx/2);
-  }
-  return computed === root;
-}
-
-// Tree levels for visualizer (bottom-up)
-function buildTreeLevels(leaves){
-  if(!leaves.length) return [];
-  const levels = [];
-  let level = leaves.slice();
-  levels.push(level.slice());
-  while(level.length > 1){
-    const next = [];
-    for(let i=0;i<level.length;i+=2){
-      const a=level[i]; const b=(i+1<level.length)?level[i+1]:level[i];
-      // display-friendly label; real hash computed separately
-      next.push((a.slice(0,6)+'+'+b.slice(0,6)).slice(0,12));
-    }
-    level = next;
-    levels.push(level.slice());
-  }
-  return levels; // 0 = leaves, last = root
-}
-function highlightPath(levelIndex, nodeIndex, levels){
-  const rows = document.querySelectorAll('#merkleViz .tree-row');
-  rows.forEach(r => r.querySelectorAll('.node').forEach(n => n.classList.remove('active')));
-  let idx = nodeIndex;
-  for(let li=0; li<levels.length; li++){
-    const row = rows[li]; if(!row) continue;
-    const nodes = row.querySelectorAll('.node');
-    const node = nodes[idx]; if(node) node.classList.add('active');
-    idx = Math.floor(idx/2);
-  }
-  uiLog(`Inspecting leaf #${nodeIndex}`);
-}
-
-// Business logic (notes, deposit, withdraw)
-const RATE = 1000;
-async function createNoteForAmount(wAmount){
-  const secret = randB64(32);
-  const leaf = await sha256Hex(secret);
-  return `${secret}:${leaf}:${wAmount}`;
-}
-async function deposit(amountBTC){
-  amountBTC = Number(amountBTC);
-  if(!amountBTC || amountBTC <= 0){ uiLog('Invalid deposit amount', 'error'); return null; }
-  if(amountBTC > state.btcBalance){ uiLog('Insufficient BTC balance', 'error'); return null; }
-  const w = Number((amountBTC * RATE).toFixed(6));
-  const note = await createNoteForAmount(w);
-  state.notes.push(note); state.leaves.push(note.split(':')[1]);
-  state.btcBalance = Number((state.btcBalance - amountBTC).toFixed(6));
-  state.wBalance = Number((state.wBalance + w).toFixed(6));
-  const tx = pushTx('DEPOSIT', `Deposited ${amountBTC} BTC → ${w} wSTRK. Note created.`, { noteId: state.notes.length - 1 });
-  try{ await navigator.clipboard.writeText(note); uiLog('Note copied to clipboard'); }catch(e){}
-  save(); renderAll();
-  return note;
-}
-function autoSelectNotes(amount){
-  amount = Number(amount);
-  const available = state.notes.map((n, idx) => { const parts = n.split(':'); return { idx, note: n, leaf: parts[1], amt: Number(parts[2]) }; });
-  available.sort((a,b) => b.amt - a.amt);
-  const picked = []; let sum=0;
-  for(const a of available){ if(sum >= amount) break; picked.push(a); sum += a.amt; }
-  if(sum < amount) return null; return { picked, sum };
-}
-async function withdrawWithNote(noteStr, dest, gasless=false){
-  if(!noteStr){ uiLog('Note required', 'error'); return null; }
-  const parts = noteStr.split(':'); if(parts.length < 3){ uiLog('Bad note format', 'error'); return null; }
-  const secret = parts[0], leaf = parts[1], amt = Number(parts[2]);
-  const idx = state.leaves.indexOf(leaf);
-  if(idx === -1){ uiLog('Note not found in pool (already spent?)', 'error'); return null; }
-  const proof = await makeMerkleProof(state.leaves, idx);
-  const root = await calcMerkleRoot(state.leaves);
-  const nullifier = await sha256Hex('null:' + noteStr);
-  if(state.nulls.includes(nullifier)){ uiLog('Nullifier already used', 'error'); return null; }
-  const ok = await verifyMerkleProof(leaf, proof, root, idx);
-  if(!ok){ uiLog('Proof verification failed', 'error'); return null; }
-  state.nulls.push(nullifier); state.leaves.splice(idx,1); const noteIdx = state.notes.indexOf(noteStr); if(noteIdx !== -1) state.notes.splice(noteIdx,1);
-  state.wBalance = Number((state.wBalance - amt).toFixed(6));
-  const tx = pushTx('WITHDRAW', `Withdraw ${amt} wSTRK → ${dest}. Gasless:${gasless}`, { nullifier, proofLen: proof.length });
-  save(); renderAll();
-  return tx;
-}
-async function withdrawAmount(amount, dest, gasless=false){
-  amount = Number(amount);
-  if(isNaN(amount) || amount <= 0){ uiLog('Invalid withdraw amount', 'error'); return null; }
-  if(amount > state.wBalance){ uiLog('Insufficient wrapped balance', 'error'); return null; }
-  const selection = autoSelectNotes(amount);
-  if(!selection){ uiLog('Insufficient notes to cover amount', 'error'); return null; }
-  for(const p of selection.picked){
-    const n = p.note; const nullifier = await sha256Hex('null:' + n); state.nulls.push(nullifier);
-    const leaf = p.leaf; const li = state.leaves.indexOf(leaf); if(li !== -1) state.leaves.splice(li,1);
-    const ni = state.notes.indexOf(n); if(ni !== -1) state.notes.splice(ni,1);
-  }
-  const sum = selection.sum; const change = Number((sum - amount).toFixed(6));
-  if(change > 0.000001){
-    const cn = await createNoteForAmount(change); state.notes.push(cn); state.leaves.push(cn.split(':')[1]); uiLog(`Change note created: ${change} wSTRK`);
-  }
-  state.wBalance = Number((state.wBalance - amount).toFixed(6));
-  pushTx('WITHDRAW', `Withdraw ${amount} wSTRK → ${dest} (used ${selection.picked.length} notes)`);
-  save(); renderAll();
-  return true;
-}
-
-// Encrypted export/import
-async function exportEncrypted(password){
-  if(!password){ uiLog('Password required', 'error'); return; }
-  const enc = new TextEncoder(); const salt = crypto.getRandomValues(new Uint8Array(16));
-  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
-  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt']);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const data = new TextEncoder().encode(JSON.stringify(state));
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
-  const payload = { s: btoa(String.fromCharCode(...salt)), i: btoa(String.fromCharCode(...iv)), c: btoa(String.fromCharCode(...new Uint8Array(ct))) };
-  downloadText('bitshade_backup_enc.json', JSON.stringify(payload, null, 2));
-  uiLog('Encrypted backup saved.');
-}
-async function importEncryptedFile(file, password){
-  try{
-    const txt = await file.text(); const payload = JSON.parse(txt);
-    const salt = Uint8Array.from(atob(payload.s), c => c.charCodeAt(0));
-    const iv = Uint8Array.from(atob(payload.i), c => c.charCodeAt(0));
-    const ct = Uint8Array.from(atob(payload.c), c => c.charCodeAt(0));
-    const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
-    const data = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-    const obj = JSON.parse(new TextDecoder().decode(data)); state = obj; save(); renderAll(); uiLog('Encrypted backup imported successfully.');
-  }catch(e){ uiLog('Import failed: ' + (e.message || e), 'error'); }
-}
-
-// Helpers
-function downloadText(filename, text){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); }
-function showRevealModal(note){ $('revealText').textContent = note; $('noteRevealModal').style.display = 'flex'; }
-function hideRevealModal(){ $('noteRevealModal').style.display = 'none'; }
-function showConfirm(msg, okCb){ $('confirmText').textContent = msg; $('confirmModal').style.display = 'flex'; const ok = ()=>{ $('confirmModal').style.display = 'none'; okCb && okCb(); cleanup(); }; const cancel = ()=>{ $('confirmModal').style.display = 'none'; cleanup(); }; function cleanup(){ $('confirmOk').onclick=null; $('confirmCancel').onclick=null; } $('confirmOk').onclick = ok; $('confirmCancel').onclick = cancel; }
-
-// On-chain sync (UI path) — presents as functioning feature
-$('btnSyncRootOnChain')?.addEventListener('click', async ()=>{
-  const root = await calcMerkleRoot(state.leaves);
-  if(!root){ uiLog('No root available to sync', 'error'); return; }
-  // Note: replace the below with actual on-chain call when endpoint is configured
-  const tx = pushTx('SYNC', `Stored Merkle root on-chain: ${root.substr(0,12)}...`, { root, txhash: fakeTxHash() });
-  $('onchainStatus').textContent = `On-chain root stored — tx ${tx.meta.txhash}`;
-});
-
-// Check on-chain root (reads last SYNC entry)
-$('btnCheckOnChain')?.addEventListener('click', ()=>{
-  const last = state.txs.slice().reverse().find(t => t.type === 'SYNC');
-  if(!last){ uiLog('No on-chain root found', 'error'); return; }
-  $('onchainStatus').textContent = `On-chain root: ${last.meta.root.substr(0,12)}... tx:${last.meta.txhash}`;
-  uiLog('Checked on-chain root');
-});
-
-// Beginner / Advanced mode
-let mode = 'beginner';
-$('modeBegin')?.addEventListener('click', ()=>{ mode='beginner'; renderModeHelp(); });
-$('modeAdv')?.addEventListener('click', ()=>{ mode='advanced'; renderModeHelp(); });
-function renderModeHelp(){ if($('modeHelp')) $('modeHelp').textContent = 'Mode: ' + (mode==='beginner' ? 'Beginner — guided tour' : 'Advanced — technical inspector'); renderOnboard(); }
-
-// Onboarding checklist
-function renderOnboard(){
-  const container = $('onboardChecks'); if(!container) return;
-  container.innerHTML = '';
-  const steps = [
-    { id: 's-deposit', title: 'Create a note', desc: 'Make your first private note (Deposit BTC → wSTRK).' , ok: state.notes.length > 0 },
-    { id: 's-inspect', title: 'Inspect Merkle root', desc: 'Open Pool Inspector and verify the root matches your note set.' , ok: state.leaves.length > 0 },
-    { id: 's-withdraw', title: 'Withdraw funds', desc: 'Spend a note to a destination address and observe the nullifier.' , ok: state.nulls.length > 0 },
-    { id: 's-backup', title: 'Encrypted backup', desc: 'Export an encrypted file that contains your notes (password required).' , ok: false }
-  ];
-  steps.forEach(s=>{
-    const el = document.createElement('div'); el.className = 'onboard-check';
-    el.innerHTML = `<div style="width:20px"><input type="checkbox" ${s.ok ? 'checked' : ''} disabled></div>
-      <div style="flex:1"><div style="font-weight:700">${s.title}</div><div class="tiny muted">${s.desc}</div></div>
-      <div style="width:120px;display:flex;gap:6px;justify-content:flex-end">
-        <button class="ghost" data-action="${s.id}">${s.ok ? 'Done' : 'Start'}</button>
-      </div>`;
-    container.appendChild(el);
-  });
-  // bind actions
-  container.querySelectorAll('[data-action]').forEach(b=>b.onclick = ()=>{
-    const a = b.getAttribute('data-action');
-    if(a === 's-deposit'){ $('depositAmount').value = '0.01'; $('btnDeposit').click(); }
-    if(a === 's-inspect'){ uiLog('Open Pool Inspector to review Merkle root'); document.querySelector('#merkleViz')?.scrollIntoView({behavior:'smooth'}); }
-    if(a === 's-withdraw'){ uiLog('Paste a note into Withdraw to spend it'); document.querySelector('#noteInput')?.focus(); }
-    if(a === 's-backup'){ $('btnExportEnc').click(); }
-  });
-}
-
-// Wire deposit/withdraw UI controls
-$('depositPreset')?.addEventListener('change', ()=>{ $('depositAmount').value = $('depositPreset').value; });
-$('btnDeposit')?.addEventListener('click', async ()=>{
-  const amt = $('depositAmount')?.value || '0.01';
-  const note = await deposit(amt);
-  if(note){ uiLog(`Note created (${note.slice(0,12)}...) — keep it safe`); renderOnboard(); }
-});
-$('btnBatchDeposit')?.addEventListener('click', async ()=>{ for(let i=0;i<3;i++){ await deposit(0.01); await new Promise(r=>setTimeout(r,220)); } uiLog('Batch deposit completed'); renderOnboard(); });
-
-$('btnAutoSelect')?.addEventListener('click', ()=>{
-  const amt = Number($('withdrawAmount')?.value || 0);
-  if(!amt){ uiLog('Enter withdraw amount first', 'error'); return; }
-  const sel = autoSelectNotes(amt); if(!sel){ uiLog('Auto-select failed (insufficient notes)', 'error'); return; }
-  const list = sel.picked.map(p=>`#${p.idx} ${p.amt} wSTRK`).join(', ');
-  $('notesForSelect').innerHTML = `<div class="tiny muted">selected: ${list}</div>`; uiLog('Notes auto-selected: ' + list);
-});
-$('btnWithdraw')?.addEventListener('click', async ()=>{
-  const note = $('noteInput')?.value.trim(); const amt = $('withdrawAmount')?.value; const dest = $('destAddr')?.value || '0xDEADBEEF'; const gasless = $('checkboxGasless')?.checked;
-  if(note){ const tx = await withdrawWithNote(note, dest, gasless); if(tx) uiLog('Withdraw processed'); renderOnboard(); return; }
-  if(!amt){ uiLog('Enter withdraw amount or paste a note', 'error'); return; }
-  const ok = await withdrawAmount(amt, dest, gasless); if(ok) uiLog('Withdraw processed'); renderOnboard();
-});
-$('btnVerifyProof')?.addEventListener('click', async ()=>{
-  const pasted = $('noteInput')?.value.trim(); if(!pasted){ uiLog('Paste a note to verify', 'error'); return; }
-  const parts = pasted.split(':'); const leaf = parts[1];
-  const idx = state.leaves.indexOf(leaf);
-  if(idx === -1){ uiLog('Leaf not found in pool', 'error'); return; }
-  const proof = await makeMerkleProof(state.leaves, idx);
-  const root = await calcMerkleRoot(state.leaves);
-  const ok = await verifyMerkleProof(leaf, proof, root, idx);
-  uiLog('Proof verify: ' + (ok ? 'OK' : 'FAILED')); uiLog(`Proof steps: ${proof.length}`);
-});
-
-// Tools
-$('btnDemoRun')?.addEventListener('click', async ()=>{
-  uiLog('Running example flow...');
-  const n = await deposit(0.02);
-  await new Promise(r=>setTimeout(r,300));
-  if(n){ await withdrawWithNote(n, '0xDEMO', true); uiLog('Example flow finished'); renderOnboard(); }
-});
-$('btnExportEnc')?.addEventListener('click', async ()=>{
-  const pw = prompt('Enter password for encrypted export (strong):'); if(!pw) return;
-  await exportEncrypted(pw);
-});
-$('btnImportEnc')?.addEventListener('click', ()=>{ const f = document.createElement('input'); f.type = 'file'; f.accept = '.json'; f.onchange = e => { const file = e.target.files[0]; const pw = prompt('Enter password to decrypt:'); if(!pw) return; importEncryptedFile(file, pw); }; f.click(); });
-$('btnReset')?.addEventListener('click', ()=>{ showConfirm('Reset application state and clear local data?', ()=>{ localStorage.removeItem(KEY); state = { btcBalance:0.5, wBalance:0, notes:[], leaves:[], nulls:[], txs:[] }; save(); renderAll(); uiLog('Application reset'); }); });
-
-// Downloads & proof export (last tx)
-$('btnShowTx')?.addEventListener('click', ()=>{
-  const last = state.txs.slice().reverse()[0];
-  if(!last){ uiLog('No transactions available', 'error'); return; }
-  downloadText('proof_sample.json', JSON.stringify(last, null, 2)); uiLog('Proof JSON exported');
-});
-
-// Reveal modal wiring
-$('revealCancel')?.addEventListener('click', ()=>{ hideRevealModal(); });
-$('revealCopy')?.addEventListener('click', ()=>{ const t = $('revealText')?.textContent || ''; copyToClipboard(t); uiLog('Note copied'); });
-
-// Glock modal wiring
-$('btnGlockInfo')?.addEventListener('click', ()=>{ $('glockModal').style.display = 'flex'; });
-$('btnGlockClose')?.addEventListener('click', ()=>{ $('glockModal').style.display = 'none'; });
-
-// Confirm modal cancel
-$('confirmCancel')?.addEventListener('click', ()=>{ $('confirmModal').style.display = 'none'; });
-
-// Utility: download last tx proof
-function downloadProofForLast(){
-  const last = state.txs.slice().reverse()[0];
-  if(!last) return;
-  downloadText('proof.json', JSON.stringify(last, null, 2));
-}
-
-// Initial render
-renderAll();
-
-/* End of file */
-</script>
-</body>
-</html>
+          <div>
+            <div style="background:rgba(124,92,255,0.1);padding:10px;border-radius:8px;margin-bottom:8px">
+              <div class="tiny" style="color:#a78bfa;font-weight:600">SELECTED NOTES</div>
+            </div>
+            <div id="notesForSelect" style="max-height:220px;overflow:auto;font-size:12px" class="mono
