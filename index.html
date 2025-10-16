@@ -3,600 +3,491 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>BitShade-Pro — Private BTC → Starknet Bridge</title>
-<meta name="description" content="BitShade-Pro: Private BTC → Starknet bridge — Merkle proofs, nullifiers, encrypted backups.">
+<title>BitShade-Pro — Private BTC → Starknet</title>
+<meta name="description" content="BitShade-Pro: Private BTC → Starknet bridge — notes, Merkle proofs, nullifiers, encrypted backups. Beginner & Advanced modes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#06121a; --panel:#0a1929; --panel-hover:#0d1f33; --muted:#9fb0c6;
-    --accent:#7c5cff; --accent-2:#4f46e5; --accent-glow:rgba(124,92,255,0.25);
-    --glass:rgba(255,255,255,0.02); --glass-2:rgba(255,255,255,0.04);
-    --card-shadow: 0 8px 32px rgba(2,6,23,0.7), 0 0 0 1px rgba(255,255,255,0.02);
-    --ok:#16a34a; --bad:#ef4444; --warning:#f59e0b;
+    --bg:#06121a; --panel:#071726; --muted:#9fb0c6; --accent:#7c5cff;
+    --accent-2:#4f46e5; --glass:rgba(255,255,255,0.02); --card-shadow: 0 8px 28px rgba(2,6,23,0.6);
+    --ok:#16a34a; --bad:#ef4444; --glass-2: rgba(255,255,255,0.03);
   }
   *{box-sizing:border-box}
-  html,body{height:100%;overflow-x:hidden}
-  body{
-    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    margin:0;
-    background:radial-gradient(ellipse at top, #0f1f2f 0%, #02121a 50%, #000 100%);
-    color:#e6eef8;
-    padding:20px;
-    line-height:1.45;
-    position:relative;
-  }
-
-  .wrap{max-width:1400px;margin:0 auto;position:relative;z-index:1}
-
-  header{
-    background:linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-    backdrop-filter:blur(18px);
-    border:1px solid rgba(255,255,255,0.05);
-    border-radius:14px;
-    padding:20px;
-    margin-bottom:20px;
-    box-shadow:0 8px 32px rgba(0,0,0,0.3);
-  }
-
-  .header-content{display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;z-index:1}
-  .header-left{flex:1}
-  h1{
-    margin:0 0 6px;
-    font-size:28px;
-    font-weight:800;
-    background:linear-gradient(135deg, #fff 0%, #a78bfa 100%);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-    background-clip:text;
-  }
-  .lead{margin:0 0 8px;color:var(--muted);font-size:14px}
-  .tech-stack{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-  .tech-badge{
-    padding:4px 10px;border-radius:999px;background:rgba(124,92,255,0.08);
-    border:1px solid rgba(124,92,255,0.12);font-size:11px;font-weight:600;color:#cdb6ff;
-  }
-
-  .top-stats{display:flex;gap:12px;align-items:stretch}
-  .stat{
-    background:linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-    padding:12px;border-radius:10px;min-width:120px;text-align:center;
-    border:1px solid rgba(255,255,255,0.04);
-  }
-  .stat .small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
-  .stat .big{font-weight:700;font-family:'JetBrains Mono',monospace;font-size:18px;color:#fff}
-
-  .mode-selector{display:flex;gap:8px;background:rgba(0,0,0,0.25);padding:6px;border-radius:10px}
-  .mode-btn{background:transparent;border:0;padding:8px 14px;border-radius:8px;color:var(--muted);cursor:pointer;font-weight:600}
-  .mode-btn.active{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#fff;box-shadow:0 4px 12px var(--accent-glow)}
-
-  .grid{display:grid;grid-template-columns:1fr 460px;gap:20px}
-
-  .card{background:linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.04);box-shadow:var(--card-shadow)}
-  .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-  h3{margin:0;font-size:18px;font-weight:700}
-  .card-subtitle{font-size:13px;color:var(--muted);margin-top:6px}
-
-  button{background:linear-gradient(135deg,var(--accent-2),var(--accent));border:0;color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:700}
-  button.ghost{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-  input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.28);color:inherit}
-
-  .mono{font-family:'JetBrains Mono',monospace}
+  html,body{height:100%}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:linear-gradient(180deg,#02121a,#04131b);color:#e6eef8;padding:18px;line-height:1.35}
+  .wrap{max-width:1200px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  h1{margin:0;font-size:20px}
+  .lead{margin:0;color:var(--muted);font-size:13px}
+  .top-stats{display:flex;gap:10px;align-items:center}
+  .stat{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:10px;min-width:110px;text-align:center}
+  .stat .small{font-size:12px;color:var(--muted)}
+  .stat .big{font-weight:700;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:16px}
+  .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
+  .card{background:var(--panel);border-radius:12px;padding:14px;box-shadow:var(--card-shadow)}
+  .row{display:flex;gap:8px;align-items:center}
+  button{background:linear-gradient(90deg,var(--accent-2),var(--accent));border:0;color:#fff;padding:9px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 10px}
+  input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
   .small{font-size:13px;color:var(--muted)}
   .tiny{font-size:12px;color:var(--muted)}
-
-  .merkle-canvas{background:linear-gradient(135deg, rgba(124,92,255,0.04), rgba(79,70,229,0.03));padding:14px;border-radius:10px;border:1px solid rgba(124,92,255,0.08)}
-  .root-display{background:linear-gradient(135deg, #667eea, #764ba2);padding:12px;border-radius:8px;color:#fff;margin:10px 0}
-  .root-value{font-family:'JetBrains Mono',monospace;font-size:13px;word-break:break-all}
-
-  .tree-row{display:flex;gap:12px;justify-content:center;padding:10px 0}
-  .node{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);font-family:'JetBrains Mono',monospace}
-  .node.leaf{background:linear-gradient(135deg,#072a36,#08364a);border-color:rgba(8,54,74,0.6)}
-  .node.root{background:linear-gradient(135deg,#243bff,#7c5cff);font-weight:700;color:#fff}
-
-  .log{height:220px;overflow:auto;background:rgba(0,0,0,0.35);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04)}
-  .tx-card{padding:12px;border-radius:10px;background:linear-gradient(135deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));margin-bottom:10px}
-
-  .note-card{padding:10px;border-radius:10px;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.04);margin-bottom:10px}
-  .onboard-check{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);margin-bottom:8px}
-  .checkbox-custom{width:18px;height:18px;border-radius:4px;border:2px solid rgba(255,255,255,0.14);display:inline-flex;align-items:center;justify-content:center}
-  .checkbox-custom.checked{background:linear-gradient(135deg,var(--accent-2),var(--accent));border-color:var(--accent)}
-
-  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(2,6,23,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px;z-index:1000}
-  .modal-content{max-width:700px;width:100%;background:linear-gradient(135deg,rgba(10,25,41,0.98),rgba(6,18,26,0.98));border-radius:12px;padding:18px;border:1px solid rgba(124,92,255,0.12)}
-
-  footer{margin-top:28px;padding:20px;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid rgba(255,255,255,0.04)}
-  @media (max-width:1100px){ .grid{grid-template-columns:1fr} .header-content{flex-direction:column;align-items:flex-start} }
+  .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px}
+  .log{height:180px;overflow:auto;background:var(--glass);padding:10px;border-radius:8px;font-size:13px}
+  .muted{color:var(--muted)}
+  .success{color:var(--ok)}
+  .danger{color:var(--bad)}
+  .list{max-height:260px;overflow:auto}
+  .controls{display:flex;gap:8px;align-items:center}
+  footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+  .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,0.3)}
+  .help{font-size:13px;color:var(--muted);padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02))}
+  .center{display:flex;align-items:center;justify-content:center}
+  .muted-2{color:#8aa6bf}
+  .toggle{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 8px;border-radius:8px;color:var(--muted);cursor:pointer}
+  .row-wrap{display:flex;flex-wrap:wrap;gap:8px}
+  /* merkle viz improvements */
+  .merkle-canvas{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:12px;border-radius:10px;max-height:360px;overflow:auto}
+  .node{display:inline-flex;align-items:center;justify-content:center;min-width:64px;height:28px;border-radius:6px;background:rgba(255,255,255,0.02);margin:6px;font-size:11px;padding:0 8px;white-space:nowrap}
+  .node.leaf{background:linear-gradient(90deg,#0b2a3a,#08364a)}
+  .node.root{background:linear-gradient(90deg,#243bff,#7c5cff);font-weight:700}
+  .node.active{box-shadow:0 6px 20px rgba(124,92,255,0.15);outline:2px solid rgba(124,92,255,0.12)}
+  .tree-row{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px}
+  .tree-collapsed{display:flex;align-items:center;gap:8px;padding:8px;color:var(--muted);font-size:12px}
+  .hint{font-size:12px;color:var(--muted);padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.01)}
+  .tx-card{padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02))}
+  .help-step{padding:12px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));margin-bottom:8px}
+  .studio{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .onboard-check{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:8px}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} header{flex-direction:column;align-items:flex-start} .merkle-canvas{overflow:auto} }
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <!-- Security banner -->
-  <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <div>
-        <strong style="font-size:14px">Security notice</strong>
-        <div class="small" style="margin-top:6px">
-          Notes (the secrets that can spend funds) are kept in memory only. Export an encrypted backup if you want persistence.
-          Do not share your notes or backups. The app will not persist secrets to localStorage unless you explicitly export them.
-        </div>
-      </div>
-      <div>
-        <button class="ghost" id="btnAcknowledge">I understand</button>
-      </div>
-    </div>
-  </div>
-
+<div class="wrap" role="application" aria-labelledby="app-title">
   <header>
-    <div class="header-content">
-      <div class="header-left">
-        <h1>BitShade-Pro</h1>
-        <p class="lead">
-          Private, non-custodial BTC → Starknet bridge with Merkle proofs, nullifier protection, and encrypted backup support.
-        </p>
-        <div class="tech-stack">
-          <span class="tech-badge">SHA-256 Merkle Trees</span>
-          <span class="tech-badge">UTXO Privacy Model</span>
-          <span class="tech-badge">Nullifier Registry</span>
-          <span class="tech-badge">AES-GCM + PBKDF2</span>
-          <span class="tech-badge">Starknet Integration</span>
-        </div>
+    <div>
+      <h1 id="app-title">BitShade-Pro</h1>
+      <p class="lead">Private BTC → Starknet — non-custodial bridge with privacy primitives and a clear UI for users and reviewers.</p>
+      <div class="tiny muted-2" style="margin-top:6px">Complete flow: deposit → inspect proof → withdraw → export proof. Configure your Starknet endpoint in settings.</div>
+    </div>
+
+    <div class="top-stats" aria-hidden="false">
+      <div class="stat" title="Your Bitcoin balance (on-chain wallet)">
+        <div class="small">BTC Balance</div>
+        <div class="big mono" id="btcBal">0.500000</div>
       </div>
-
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div class="top-stats">
-          <div class="stat">
-            <div class="small">BTC Balance</div>
-            <div class="big mono" id="btcBal">0.500000</div>
-          </div>
-          <div class="stat">
-            <div class="small">wSTRK</div>
-            <div class="big mono" id="wBal">0.0000</div>
-          </div>
-          <div class="stat">
-            <div class="small">Privacy Pool</div>
-            <div class="big mono" id="poolSize">0</div>
-          </div>
+      <div class="stat" title="Wrapped STRK balance available for staking/trading">
+        <div class="small">wSTRK</div>
+        <div class="big mono" id="wBal">0.0000</div>
+      </div>
+      <div style="width:6px"></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div style="display:flex;gap:6px">
+          <button id="modeBegin" class="toggle" aria-pressed="true">Beginner</button>
+          <button id="modeAdv" class="toggle" aria-pressed="false">Advanced</button>
         </div>
-
-        <div class="mode-selector">
-          <button class="mode-btn active" id="modeBegin">Beginner</button>
-          <button class="mode-btn" id="modeAdv">Advanced</button>
-        </div>
+        <div class="tiny muted" id="modeHelp">Mode: Beginner</div>
       </div>
     </div>
   </header>
 
-  <div class="grid">
+  <div class="grid" role="region" aria-label="Main application">
+    <!-- left: core flows -->
     <main>
       <!-- Onboarding -->
-      <section class="card" style="margin-bottom:16px">
-        <div class="card-header">
+      <section id="onboarding" class="card" aria-labelledby="onboard-title" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <h3>Quick start</h3>
-            <div class="card-subtitle">Follow these steps to create a private note and withdraw it. Backups are encrypted and manual.</div>
+            <h3 id="onboard-title" style="margin:0 0 6px">Welcome — Get started</h3>
+            <div class="small muted">Follow the checklist to complete your first private transfer. Each step is reversible.</div>
           </div>
-          <button class="ghost" id="btnSkipOnboard">Skip</button>
+          <div class="center"><button class="ghost" id="btnSkipOnboard">Skip</button></div>
         </div>
 
-        <div id="onboardChecks"></div>
+        <div style="height:10px"></div>
 
-        <div style="display:flex;gap:12px;margin-top:12px">
-          <div style="flex:1">
-            <div class="note-card">
-              <div class="small">Deposits</div>
-              <div class="big mono" id="statsDeposits">0</div>
-            </div>
-          </div>
-          <div style="flex:1">
-            <div class="note-card">
-              <div class="small">Withdrawals</div>
-              <div class="big mono" id="statsWithdraws">0</div>
-            </div>
-          </div>
-          <div style="flex:1">
-            <div class="note-card">
-              <div class="small">Proofs generated</div>
-              <div class="big mono" id="statsProofs">0</div>
-            </div>
-          </div>
+        <div id="onboardChecks">
+          <!-- dynamically filled -->
         </div>
+
+        <div style="height:10px"></div>
+        <div class="help small muted">Tip: Use the Beginner mode if you are new. Advanced mode exposes Merkle proof internals for verification.</div>
       </section>
 
-      <!-- Deposit -->
-      <section class="card" style="margin-bottom:16px">
-        <div class="card-header">
+      <section class="card" style="margin-bottom:12px" id="depositSection" aria-labelledby="deposit-title">
+        <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <h3>Deposit — Bridge BTC to Starknet</h3>
-            <div class="card-subtitle">Create a privacy-preserving note. The note secret is required to spend later.</div>
+            <h3 id="deposit-title" style="margin:0 0 6px">Deposit — Bridge BTC to Starknet</h3>
+            <div class="small muted">Create private UTXO-style notes representing your wrapped BTC on Starknet (wSTRK).</div>
           </div>
+          <div class="tiny muted">Bridge: <select id="bridgeSelect" aria-label="Bridge provider"><option>Alpen / Glock</option><option>Atomiq</option><option>Garden</option></select></div>
         </div>
 
-        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
-          <div style="flex:1">
-            <label class="small">Amount (BTC)</label>
-            <input id="depositAmount" placeholder="0.01" type="number" step="0.001"/>
-          </div>
-
-          <select id="depositPreset" style="flex:0 0 140px">
-            <option value="">Quick select</option>
-            <option value="0.01">0.01</option>
-            <option value="0.05">0.05</option>
-            <option value="0.1">0.1</option>
+        <div style="height:10px"></div>
+        <div class="row" style="gap:8px">
+          <input id="depositAmount" aria-label="Deposit amount in BTC" placeholder="amount BTC (e.g. 0.01)" style="max-width:200px"/>
+          <select id="depositPreset" style="max-width:140px" aria-label="Deposit presets">
+            <option value="">preset</option>
+            <option value="0.01">0.01 BTC</option>
+            <option value="0.05">0.05 BTC</option>
+            <option value="0.1">0.1 BTC</option>
           </select>
+          <button id="btnDeposit">Deposit</button>
+          <button class="ghost" id="btnBatchDeposit">Batch (3×0.01)</button>
         </div>
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="btnDeposit">Create private note</button>
-          <button class="ghost" id="btnBatchDeposit">Batch (3 × 0.01)</button>
-          <button class="ghost" id="btnExportEnc">Export encrypted backup</button>
-          <button class="ghost" id="btnImportEnc">Import encrypted backup</button>
-        </div>
-
-        <div style="margin-top:12px;padding:10px;border-radius:8px;background:rgba(124,92,255,0.04);border:1px solid rgba(124,92,255,0.06);">
-          <div class="small">Technical: secrets generated with the Web Crypto API. Notes => SHA-256 leaf. Backups use AES-GCM; PBKDF2 iterations=200000.</div>
-        </div>
+        <div style="height:8px"></div>
+        <div class="help">Notes are generated client-side. Export encrypted backups to restore them on another device.</div>
       </section>
 
-      <!-- Withdraw -->
-      <section class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <div>
-            <h3>Withdraw — Spend private notes</h3>
-            <div class="card-subtitle">Construct a Merkle inclusion proof and emit a nullifier to prevent double-spend.</div>
-          </div>
-        </div>
+      <section class="card" style="margin-bottom:12px" id="withdrawSection" aria-labelledby="withdraw-title">
+        <h3 id="withdraw-title" style="margin:0 0 8px">Withdraw — Spend your notes</h3>
+        <div class="small muted">Paste a single note to spend it directly, or auto-select notes to cover a desired amount. Change notes are created automatically.</div>
 
-        <div style="display:grid;grid-template-columns:1fr 260px;gap:12px">
-          <div>
-            <label class="small">Paste note (optional)</label>
-            <textarea id="noteInput" rows="2" placeholder="secret:leaf:amount"></textarea>
-
-            <label class="small" style="margin-top:10px">Amount (wSTRK)</label>
-            <input id="withdrawAmount" placeholder="0.0" type="number" step="0.01"/>
-
-            <label class="small" style="margin-top:10px">Destination address</label>
-            <input id="destAddr" placeholder="0x..." value="0xDEADBEEF"/>
-
-            <div style="display:flex;align-items:center;gap:8px;margin:12px 0">
-              <input type="checkbox" id="checkboxGasless"/>
-              <span class="small">Use paymaster (gasless)</span>
-            </div>
-
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="height:10px"></div>
+        <div class="row" style="gap:10px;align-items:flex-start">
+          <div style="flex:1">
+            <textarea id="noteInput" rows="2" placeholder="paste a single note here (optional)" aria-label="Paste note"></textarea>
+            <div style="height:8px"></div>
+            <input id="withdrawAmount" placeholder="withdraw amount (wSTRK)" aria-label="Withdraw amount (wSTRK)"/>
+            <div style="height:8px"></div>
+            <input id="destAddr" placeholder="destination address (e.g. 0x12...9fab)" aria-label="Destination address"/>
+            <div style="height:8px"></div>
+            <label class="tiny"><input type="checkbox" id="checkboxGasless"/> Paymaster (gasless)</label>
+            <div style="height:10px"></div>
+            <div class="row-wrap">
               <button id="btnAutoSelect">Auto-select notes</button>
-              <button id="btnWithdraw">Execute withdrawal</button>
+              <button id="btnWithdraw">Withdraw</button>
               <button class="ghost" id="btnVerifyProof">Verify proof</button>
               <button class="ghost" id="btnShowTx">Export proof JSON</button>
             </div>
 
-            <div id="withdrawNote" class="tiny" style="margin-top:12px;color:var(--muted)"></div>
+            <div style="height:8px"></div>
+            <div id="withdrawNote" class="tiny muted"></div>
           </div>
 
-          <div>
-            <div style="margin-bottom:10px">
-              <div class="small">Selected notes</div>
-            </div>
-            <div id="notesForSelect" style="max-height:260px;overflow:auto;font-size:13px" class="mono"></div>
+          <div style="width:240px">
+            <div class="pill tiny">Selection</div>
+            <div style="height:8px"></div>
+            <div id="notesForSelect" class="list mono small" style="max-height:220px;overflow:auto" aria-live="polite"></div>
           </div>
         </div>
       </section>
 
-      <!-- Activity -->
-      <section class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <div>
-            <h3>Activity & receipts</h3>
-            <div class="card-subtitle">Chronological activity, click a transaction to expand details. Export proofs for audit.</div>
-          </div>
+      <section class="card" style="margin-bottom:12px" aria-labelledby="activity-title">
+        <h3 id="activity-title" style="margin:0 0 8px">Activity & Receipts</h3>
+        <div class="tiny muted">Chronological activity — click a tx to expand details. Copy or download proofs for audit or review.</div>
+        <div style="height:8px"></div>
+        <div id="txLog" class="log mono" role="log" aria-live="polite"></div>
+      </section>
+
+      <section class="card" style="margin-bottom:14px" aria-labelledby="tools-title">
+        <h3 id="tools-title" style="margin:0 0 8px">Tools</h3>
+        <div class="row" style="gap:8px;margin-bottom:8px">
+          <button class="ghost" id="btnDemoRun">Run example flow</button>
+          <button class="ghost" id="btnExportEnc">Export Encrypted Backup</button>
+          <button class="ghost" id="btnImportEnc">Import Encrypted Backup</button>
+          <button class="ghost" id="btnReset">Reset</button>
         </div>
-        <div id="txLog" class="log"></div>
+        <div class="tiny muted">Encrypted backups use AES-GCM; password-based key derivation protects your secrets.</div>
       </section>
     </main>
 
-    <!-- Right column: inspector, notes, nullifiers -->
+    <!-- right: inspectors, Glock modal -->
     <aside>
-      <section class="card" style="margin-bottom:12px">
+      <section class="card" style="margin-bottom:12px" aria-labelledby="pool-title">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <h3 style="margin:0">Pool inspector</h3>
-          <div class="small">Merkle leaves (SHA-256)</div>
+          <h3 id="pool-title" style="margin:0 0 6px">Pool Inspector</h3>
+          <div class="tiny muted">Merkle leaves (SHA-256)</div>
         </div>
-
-        <div style="margin-top:12px" class="merkle-canvas">
-          <div class="root-display">
-            <div class="small">Current root</div>
-            <div class="root-value mono" id="root">—</div>
+        <div style="height:8px"></div>
+        <div class="merkle-canvas" aria-live="polite">
+          <div class="pill tiny">Root</div>
+          <div id="root" class="mono" style="margin-top:8px;font-size:12px">—</div>
+          <div class="tiny muted" id="poolCount" style="margin-top:6px">pool size: 0</div>
+          <div style="height:10px"></div>
+          <div id="merkleViz" style="min-height:110px"></div>
+          <div style="height:10px"></div>
+          <div class="row" style="gap:8px">
+            <button id="btnSyncRootOnChain">Sync root → Starknet</button>
+            <button id="btnCheckOnChain" class="ghost">Check on-chain root</button>
           </div>
-
-          <div class="small" style="margin-bottom:8px">Pool size: <span id="poolCount">0</span></div>
-          <div id="merkleViz"></div>
-
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button id="btnSyncRootOnChain">Sync root → Starknet (demo)</button>
-            <button class="ghost" id="btnCheckOnChain">Check on-chain root</button>
-          </div>
-
-          <div id="onchainStatus" class="tiny" style="margin-top:8px;color:var(--muted)"></div>
+          <div id="onchainStatus" class="tiny muted" style="margin-top:8px"></div>
         </div>
       </section>
 
-      <section class="card" style="margin-bottom:12px">
-        <h3 style="margin:0 0 10px">My notes</h3>
-        <div class="small" style="margin-bottom:8px">Notes are session-only unless exported encrypted.</div>
-        <div id="myNotes"></div>
+      <section class="card" style="margin-bottom:12px" aria-labelledby="notes-title">
+        <h3 id="notes-title" style="margin:0 0 6px">My Notes</h3>
+        <div class="small muted">Each note is secret + leaf + amount. Secure your backup; anyone with the note can spend it.</div>
+        <div style="height:8px"></div>
+        <div id="myNotes" class="list" aria-live="polite"></div>
       </section>
 
-      <section class="card" style="margin-bottom:12px">
-        <h3 style="margin:0 0 10px">Nullifiers (spent)</h3>
-        <div id="nulls" class="mono tiny" style="max-height:140px;overflow:auto;color:var(--muted)"></div>
+      <section class="card" style="margin-bottom:12px" aria-labelledby="null-title">
+        <h3 id="null-title" style="margin:0 0 6px">Nullifiers (spent)</h3>
+        <div class="small muted">Nullifiers prevent re-use of the same note.</div>
+        <div id="nulls" class="mono tiny" style="margin-top:8px;max-height:120px;overflow:auto"></div>
+      </section>
+
+      <section class="card" aria-labelledby="glock-title">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 id="glock-title" style="margin:0 0 6px">Glock — Alpen (Roadmap)</h3>
+          <div class="badge tiny" id="glockBadge">Integration available</div>
+        </div>
+        <div class="small muted">BitShade-Pro integrates with Glock verifiers for provable BTC bridging on Starknet. Configure your verifier endpoint in settings.</div>
+        <div style="height:10px"></div>
+        <div class="row" style="justify-content:flex-end">
+          <button class="ghost" id="btnGlockInfo">Learn more</button>
+        </div>
       </section>
     </aside>
   </div>
 
-  <footer>
-    BitShade-Pro — Non-custodial, privacy-minded BTC → Starknet UX. Built for secure, auditable transfers.
-  </footer>
+  <footer>BitShade-Pro — Non-custodial, privacy-minded BTC → Starknet UX. Built for secure, auditable transfers.</footer>
 </div>
 
-<!-- Modals -->
-<div id="confirmModal" class="modal-backdrop" aria-hidden="true">
-  <div class="modal-content">
-    <div id="confirmText" class="small"></div>
-    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
-      <button class="ghost" id="confirmCancel">Cancel</button>
+<!-- Confirm modal -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.7);align-items:center;justify-content:center;padding:18px">
+  <div style="max-width:520px;margin:auto;background:var(--panel);border-radius:10px;padding:14px">
+    <div id="confirmText" class="small muted"></div>
+    <div style="height:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="confirmCancel" class="ghost">Cancel</button>
       <button id="confirmOk">Confirm</button>
     </div>
   </div>
 </div>
 
-<div id="revealModal" class="modal-backdrop" aria-hidden="true">
-  <div class="modal-content">
-    <h3 style="margin-top:0">Reveal note</h3>
-    <div class="small" style="color:var(--muted)">Anyone who obtains this note can spend the funds.</div>
-    <pre id="revealText" style="margin-top:12px;background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;overflow:auto"></pre>
-    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
-      <button class="ghost" id="revealClose">Close</button>
-      <button id="revealCopy">Copy</button>
+<!-- Note reveal modal -->
+<div id="noteRevealModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.7);align-items:center;justify-content:center;padding:18px">
+  <div style="max-width:760px;margin:auto;background:var(--panel);border-radius:10px;padding:14px">
+    <h3 style="margin:0 0 8px">Reveal Note — Confidential</h3>
+    <div class="small muted">Anyone who obtains this note can spend the funds. Only reveal when required.</div>
+    <pre id="revealText" style="background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;margin-top:10px;overflow:auto"></pre>
+    <div style="height:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="revealCancel" class="ghost">Close</button>
+      <button id="revealCopy">Copy to clipboard</button>
     </div>
   </div>
 </div>
 
 <script>
-/* BitShade-Pro — full single-file client prototype
-   - No external dependencies
-   - Security: notes kept session-only; only public state persisted (balances, leaves, nulls, txs)
-   - Hash adapter with SHA-256 and Poseidon placeholder
+/* BitShade-Pro — single-file production-like client
+   - Notes (secrets) stay in memory only
+   - Public state persisted to localStorage: balances, leaves, nulls, txs
+   - Merkle visualizer is responsive and won't overflow the page
 */
 
-// -----------------------------
-// Hash adapter (sha256 + placeholder for Poseidon)
-// -----------------------------
-async function sha256Hex(text) {
-  const enc = new TextEncoder();
-  const data = enc.encode(text);
-  const h = await crypto.subtle.digest('SHA-256', data);
-  const bytes = new Uint8Array(h);
-  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-// Poseidon placeholder: deterministic fallback using sha256; replace with real Poseidon lib for on-chain parity.
-async function poseidonHashPlaceholder(inputs) {
-  const s = Array.isArray(inputs) ? inputs.join('|') : String(inputs);
-  return await sha256Hex(s);
-}
-const hashAdapter = { sha256Hex, poseidonHashPlaceholder };
-
-// -----------------------------
-// Small UI sanitizer to remove emojis and odd glyphs from labels (non-invasive)
-// -----------------------------
-function stripEmojisFromText(s) {
-  if (!s) return s;
-  return s.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|\uFE0F|\u200D)/g,'').trim();
-}
-function sanitizeUIStrings() {
-  document.querySelectorAll('h1,h2,h3,button,label,option').forEach(el => {
-    if (el && el.textContent) {
-      const cleaned = stripEmojisFromText(el.textContent);
-      if (cleaned !== el.textContent) el.textContent = cleaned;
-    }
-  });
-}
-sanitizeUIStrings();
-window.addEventListener('load', sanitizeUIStrings);
-
-// -----------------------------
-// Public-state persistence (only non-secret data)
-// -----------------------------
-const PUBLIC_KEY = 'bitshade_pro_public_v1';
-function savePublicState() {
-  try {
-    const pub = {
-      btcBalance: state.btcBalance,
-      wBalance: state.wBalance,
-      leaves: state.leaves,
-      nulls: state.nulls,
-      txs: state.txs
-    };
-    localStorage.setItem(PUBLIC_KEY, JSON.stringify(pub));
-  } catch (e) {
-    console.warn('savePublicState failed', e);
-  }
-}
-function loadPublicState() {
-  try {
-    const raw = localStorage.getItem(PUBLIC_KEY);
-    if (!raw) return;
-    const s = JSON.parse(raw);
-    state.btcBalance = s.btcBalance ?? state.btcBalance;
-    state.wBalance = s.wBalance ?? state.wBalance;
-    state.leaves = s.leaves ?? state.leaves;
-    state.nulls = s.nulls ?? state.nulls;
-    state.txs = s.txs ?? state.txs;
-  } catch (e) {
-    console.warn('loadPublicState failed', e);
-  }
-}
-
-// -----------------------------
-// Utilities & general state
-// -----------------------------
+// ------------------- Utilities -------------------
 const $ = id => document.getElementById(id);
-const nowISO = () => new Date().toISOString();
-function buf2hex(buffer) { const bytes = new Uint8Array(buffer); return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-function randB64(len=32){
-  const a = crypto.getRandomValues(new Uint8Array(len));
-  let s = '';
-  for (let i=0;i<a.length;i++) s += String.fromCharCode(a[i]);
-  return btoa(s);
-}
-function fakeTxHash(){
-  const r = crypto.getRandomValues(new Uint8Array(16));
-  return '0x' + Array.from(r).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function downloadText(filename, text){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); }
+const now = () => new Date().toISOString();
+const PUBLIC_KEY = 'bitshade_pro_public_v1';
+function toFixed(n, d=6){ return Number(n).toFixed(d); }
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function buf2hex(buffer){ const bytes = new Uint8Array(buffer); return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+async function sha256Hex(text){ const enc = new TextEncoder(); const data = enc.encode(text); const h = await crypto.subtle.digest('SHA-256', data); return buf2hex(h); }
+function randB64(len=32){ const a = crypto.getRandomValues(new Uint8Array(len)); let s=''; for(let i=0;i<a.length;i++) s+=String.fromCharCode(a[i]); return btoa(s); }
 function copyToClipboard(text){ return navigator.clipboard?.writeText(text).then(()=>uiLog('Copied to clipboard')).catch(()=>{}); }
+function fakeTxHash(){ const r = crypto.getRandomValues(new Uint8Array(16)); return '0x' + Array.from(r).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function downloadText(filename, text){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); }
 
-// -----------------------------
-// Application state
-// -----------------------------
-let state = {
+// ------------------- State -------------------
+// public-derived state (persisted)
+let publicState = {
   btcBalance: 0.5,
   wBalance: 0.0,
-  notes: [],   // secret:leaf:amount (kept in memory only)
   leaves: [],
   nulls: [],
   txs: []
 };
-loadPublicState(); // load persisted public state
+// secrets in memory only
+let privateState = {
+  notes: [] // note = secret:leaf:amount
+};
 
-// -----------------------------
-// UI logging & transactions
-// -----------------------------
-function uiLog(msg, level='info'){
+// load public state from localStorage (only)
+function loadPublicState(){
+  try{
+    const raw = localStorage.getItem(PUBLIC_KEY);
+    if(!raw) return;
+    const p = JSON.parse(raw);
+    publicState.btcBalance = p.btcBalance ?? publicState.btcBalance;
+    publicState.wBalance = p.wBalance ?? publicState.wBalance;
+    publicState.leaves = Array.isArray(p.leaves) ? p.leaves : publicState.leaves;
+    publicState.nulls = Array.isArray(p.nulls) ? p.nulls : publicState.nulls;
+    publicState.txs = Array.isArray(p.txs) ? p.txs : publicState.txs;
+  }catch(e){ console.warn('loadPublicState failed', e); }
+}
+function savePublicState(){
+  try{
+    const p = {
+      btcBalance: publicState.btcBalance,
+      wBalance: publicState.wBalance,
+      leaves: publicState.leaves,
+      nulls: publicState.nulls,
+      txs: publicState.txs
+    };
+    localStorage.setItem(PUBLIC_KEY, JSON.stringify(p));
+  }catch(e){ console.warn('savePublicState failed', e); }
+}
+
+// allow reset to defaults
+function resetAll(){
+  localStorage.removeItem(PUBLIC_KEY);
+  publicState = { btcBalance:0.5, wBalance:0.0, leaves:[], nulls:[], txs:[] };
+  privateState = { notes:[] };
+  renderAll();
+  uiLog('Application reset to defaults');
+}
+
+// ------------------- UI logging & transactions -------------------
+function uiLog(msg, lvl='info'){
   const el = document.createElement('div');
   el.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong class="mono small">${(new Date()).toLocaleTimeString()}</strong> — ${escapeHtml(msg)}</div></div>`;
-  if (level === 'error') el.style.color = 'var(--bad)';
-  $('txLog').prepend(el);
+  if(lvl==='error') el.style.color = 'var(--bad)';
+  const log = $('txLog');
+  if(log) log.prepend(el);
 }
 function pushTx(type, summary, meta = {}){
-  const tx = { type, time: nowISO(), summary, meta: { ...meta, txhash: meta.txhash || fakeTxHash() } };
-  state.txs.push(tx);
+  const tx = { type, time: now(), summary, meta: { ...meta, txhash: meta.txhash || fakeTxHash() } };
+  publicState.txs.push(tx);
   savePublicState();
   renderTxs();
   uiLog(`${type}: ${summary}`);
   return tx;
 }
-function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
-// -----------------------------
-// Renderers
-// -----------------------------
+// ------------------- Renderers -------------------
 function renderAll(){
-  $('btcBal').textContent = toFixed(state.btcBalance,6);
-  $('wBal').textContent = toFixed(state.wBalance,4);
-  $('poolSize').textContent = state.leaves.length;
+  if($('btcBal')) $('btcBal').textContent = toFixed(publicState.btcBalance,6);
+  if($('wBal')) $('wBal').textContent = toFixed(publicState.wBalance,4);
   renderNotes();
   renderLeaves();
   renderNulls();
   renderRoot();
   renderTxs();
   renderOnboard();
+  renderModeHelp();
 }
-function toFixed(n,d=6){ return Number(n).toFixed(d); }
-
 function renderNotes(){
-  const box = $('myNotes');
+  const box = $('myNotes'); if(!box) return;
   box.innerHTML = '';
-  if (state.notes.length === 0) { box.innerHTML = '<div class="small" style="color:var(--muted)">No notes stored (session only). Export encrypted backup to persist.</div>'; return; }
-  state.notes.forEach((n, idx) => {
-    const [secret, leaf, amt] = n.split(':');
-    const div = document.createElement('div'); div.className = 'note-card';
-    div.innerHTML = `<div class="mono">${leaf.slice(0,16)}... — <span class="small">${amt} wSTRK</span></div>
-      <div style="margin-top:8px;display:flex;gap:8px">
+  if(!privateState.notes.length){ box.innerHTML = '<div class="muted tiny">no notes stored (session)</div>'; return; }
+  privateState.notes.forEach((n, idx) => {
+    const [s, leaf, amt] = n.split(':');
+    const row = document.createElement('div');
+    row.style.padding = '8px 0';
+    row.style.borderBottom = '1px dashed rgba(255,255,255,0.02)';
+    row.innerHTML = `<div class="mono">${leaf.substr(0,18)}... - <span class="tiny muted">${amt} wSTRK</span></div>
+      <div style="margin-top:6px" class="tiny">
         <button class="ghost" data-copy="${idx}">Copy</button>
         <button class="ghost" data-reveal="${idx}">Reveal</button>
         <button class="ghost" data-dl="${idx}">Download</button>
       </div>`;
-    box.appendChild(div);
+    box.appendChild(row);
   });
   box.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
-    const i = Number(b.getAttribute('data-copy')); copyToClipboard(state.notes[i]); uiLog('Note copied to clipboard');
+    const i = Number(b.getAttribute('data-copy')); copyToClipboard(privateState.notes[i]); uiLog('Note copied');
   });
   box.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => {
-    const i = Number(b.getAttribute('data-dl')); downloadText(`note-${i}.txt`, state.notes[i]); uiLog('Note downloaded');
+    const i = Number(b.getAttribute('data-dl')); downloadText(`note-${i}.txt`, privateState.notes[i]); uiLog('Note downloaded');
   });
   box.querySelectorAll('[data-reveal]').forEach(b => b.onclick = () => {
-    const i = Number(b.getAttribute('data-reveal')); showRevealModal(state.notes[i]);
+    const i = Number(b.getAttribute('data-reveal')); showRevealModal(privateState.notes[i]);
   });
 }
 
+// Merkle visualizer: responsive, capped display with collapse for large pools
 function renderLeaves(){
-  const box = $('merkleViz');
+  const box = $('merkleViz'); if(!box) return;
   box.innerHTML = '';
-  if (!state.leaves.length) { box.innerHTML = '<div class="small" style="color:var(--muted)">No leaves in pool</div>'; return; }
-  const levels = buildTreeLevels(state.leaves);
+  const leaves = publicState.leaves || [];
+  if(!leaves.length){ box.innerHTML = '<div class="tiny muted">no leaves</div>'; return; }
+
+  // Build levels for display
+  const levels = buildTreeLevels(leaves);
+
+  // Display strategy:
+  // - For each level, display up to MAX_PER_ROW nodes
+  // - If more nodes, show first K, a collapsed "… +N" badge, then last K
+  const MAX_PER_ROW = 16; // UI cap; adjust as needed
   levels.forEach((lvl, li) => {
     const row = document.createElement('div'); row.className = 'tree-row';
-    lvl.forEach((node, i) => {
-      const nd = document.createElement('div'); nd.className = 'node ' + (li === 0 ? 'leaf' : (li === levels.length-1 ? 'root' : ''));
-      nd.textContent = node.slice(0,10) + (node.length>10 ? '...' : '');
-      nd.onclick = () => highlightPath(li, i, levels);
-      row.appendChild(nd);
-    });
+    if (lvl.length <= MAX_PER_ROW) {
+      lvl.forEach(node => {
+        const div = document.createElement('div'); div.className = 'node ' + (li === levels.length - 1 ? 'root' : (li === 0 ? 'leaf' : ''));
+        div.textContent = node.slice(0,10) + (node.length>10 ? '...' : '');
+        row.appendChild(div);
+      });
+    } else {
+      const SHOW = 6;
+      // first SHOW
+      for (let i=0;i<SHOW;i++){
+        const node = lvl[i];
+        const div = document.createElement('div'); div.className = 'node ' + (li === levels.length - 1 ? 'root' : (li === 0 ? 'leaf' : ''));
+        div.textContent = node.slice(0,8) + '...';
+        row.appendChild(div);
+      }
+      // collapsed indicator
+      const collapsed = document.createElement('div'); collapsed.className='tree-collapsed';
+      collapsed.textContent = `… +${lvl.length - SHOW*2} more …`;
+      row.appendChild(collapsed);
+      // last SHOW
+      for (let i=lvl.length-SHOW;i<lvl.length;i++){
+        const node = lvl[i];
+        const div = document.createElement('div'); div.className = 'node ' + (li === levels.length - 1 ? 'root' : (li === 0 ? 'leaf' : ''));
+        div.textContent = node.slice(0,8) + '...';
+        row.appendChild(div);
+      }
+    }
     box.appendChild(row);
   });
 }
 
-async function renderRoot(){
-  const r = await calcMerkleRoot(state.leaves);
-  $('root').textContent = r || '—';
-  $('poolCount').textContent = state.leaves.length;
-}
+async function renderRoot(){ const r = await calcMerkleRoot(publicState.leaves); $('root').textContent = r || '—'; $('poolCount').textContent = 'pool size: ' + publicState.leaves.length; }
 
 function renderNulls(){
-  const el = $('nulls'); el.innerHTML = '';
-  if (!state.nulls.length) { el.innerHTML = '<div class="small" style="color:var(--muted)">None</div>'; return; }
-  state.nulls.forEach(n => {
-    const d = document.createElement('div'); d.textContent = n.slice(0,16) + '...'; el.appendChild(d);
-  });
+  const el = $('nulls'); if(!el) return;
+  el.innerHTML = publicState.nulls.length ? publicState.nulls.map(n => `<div>${n.substr(0,14)}...</div>`).join('') : '<div class="muted tiny">none</div>';
 }
 
 function renderTxs(){
-  const box = $('txLog'); box.innerHTML = '';
-  if (!state.txs.length){ box.innerHTML = '<div class="small" style="color:var(--muted)">No activity yet</div>'; return; }
-  state.txs.slice().reverse().forEach((t, i) => {
-    const el = document.createElement('div'); el.className = 'tx-card';
+  const box = $('txLog'); if(!box) return;
+  box.innerHTML = '';
+  if(!publicState.txs.length){ box.innerHTML = '<div class="muted tiny">no activity yet</div>'; return; }
+  publicState.txs.slice().reverse().forEach((t, idx) => {
+    const el = document.createElement('div'); el.className = 'tx-card'; el.style.marginBottom = '8px';
+    const txhash = t.meta.txhash || '—';
     el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong class="mono">${t.type}</strong> <span class="small" style="color:var(--muted)">${t.time.split('T')[1].slice(0,8)}</span></div>
-      <div style="display:flex;gap:8px">
-        <button class="ghost" data-copytx="${i}">Copy</button>
-        <button class="ghost" data-dltx="${i}">Download</button>
+      <div><strong class="mono">${t.type}</strong> <span class="tiny muted">${t.time.split('T')[1].slice(0,8)}</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="ghost" data-copytx="${idx}">Copy</button>
+        <button class="ghost" data-dl="${idx}">Download</button>
       </div>
     </div>
-    <div class="small" style="margin-top:8px">${escapeHtml(t.summary)}</div>
-    <div class="small" style="margin-top:8px;color:var(--muted)">tx: <span class="mono">${t.meta.txhash}</span></div>`;
+    <div class="tiny" style="margin-top:6px">${escapeHtml(t.summary)}</div>
+    <div class="tiny muted" style="margin-top:8px">tx: <span class="mono">${txhash}</span></div>`;
     box.appendChild(el);
   });
   box.querySelectorAll('[data-copytx]').forEach(b => b.onclick = () => {
-    const i = Number(b.getAttribute('data-copytx')); copyToClipboard(JSON.stringify(state.txs.slice().reverse()[i])); uiLog('Tx copied');
+    const i = Number(b.getAttribute('data-copytx')); copyToClipboard(JSON.stringify(publicState.txs.slice().reverse()[i])); uiLog('Tx copied');
   });
-  box.querySelectorAll('[data-dltx]').forEach(b => b.onclick = () => {
-    const i = Number(b.getAttribute('data-dltx')); const tx = state.txs.slice().reverse()[i]; downloadText(`tx-${i}.json`, JSON.stringify(tx,null,2)); uiLog('Tx downloaded');
+  box.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => {
+    const i = Number(b.getAttribute('data-dl')); const tx = publicState.txs.slice().reverse()[i]; downloadText(`tx-${i}.json`, JSON.stringify(tx, null, 2)); uiLog('Tx downloaded');
   });
 }
 
-// -----------------------------
-// Merkle tree helpers (sha256-based)
-// -----------------------------
+// ------------------- Merkle helpers -------------------
 async function calcMerkleRoot(leaves){
-  if (!leaves.length) return '';
+  if(!leaves.length) return '';
   let level = leaves.slice();
-  while (level.length > 1){
+  while(level.length > 1){
     const next = [];
-    for (let i=0;i<level.length;i+=2){
-      const a = level[i];
-      const b = (i+1<level.length) ? level[i+1] : level[i];
-      next.push(await hashAdapter.sha256Hex(a + b));
+    for(let i=0;i<level.length;i+=2){
+      const a = level[i]; const b = (i+1<level.length) ? level[i+1] : level[i];
+      next.push(await sha256Hex(a + b));
     }
     level = next;
   }
@@ -604,15 +495,14 @@ async function calcMerkleRoot(leaves){
 }
 async function makeMerkleProof(leaves, index){
   let idx = index; let level = leaves.slice(); const proof = [];
-  while (level.length > 1){
+  while(level.length > 1){
     const siblingIndex = (idx % 2 === 0) ? idx + 1 : idx - 1;
     const sibling = (siblingIndex < level.length) ? level[siblingIndex] : level[idx];
     proof.push({ sibling, isLeft: (idx % 2 === 1) });
-    // build next
     const next = [];
-    for (let i=0;i<level.length;i+=2){
+    for(let i=0;i<level.length;i+=2){
       const a = level[i]; const b = (i+1<level.length) ? level[i+1] : level[i];
-      next.push(await hashAdapter.sha256Hex(a + b));
+      next.push(await sha256Hex(a + b));
     }
     level = next; idx = Math.floor(idx/2);
   }
@@ -620,97 +510,77 @@ async function makeMerkleProof(leaves, index){
 }
 async function verifyMerkleProof(leaf, proof, root, index){
   let computed = leaf; let idx = index;
-  for (const step of proof){
-    if (idx % 2 === 0) computed = await hashAdapter.sha256Hex(computed + (step.sibling || computed));
-    else computed = await hashAdapter.sha256Hex((step.sibling || computed) + computed);
+  for(const step of proof){
+    if(idx % 2 === 0) computed = await sha256Hex(computed + (step.sibling || computed));
+    else computed = await sha256Hex((step.sibling || computed) + computed);
     idx = Math.floor(idx/2);
   }
   return computed === root;
 }
-
 function buildTreeLevels(leaves){
-  if (!leaves.length) return [];
+  if(!leaves.length) return [];
   const levels = [];
   let level = leaves.slice();
   levels.push(level.slice());
-  while (level.length > 1){
+  while(level.length > 1){
     const next = [];
-    for (let i=0;i<level.length;i+=2){
-      const a = level[i]; const b = (i+1<level.length)?level[i+1]:level[i];
-      next.push((a.slice(0,8) + '+' + b.slice(0,8)).slice(0,16));
+    for(let i=0;i<level.length;i+=2){
+      const a=level[i]; const b=(i+1<level.length)?level[i+1]:level[i];
+      next.push((a.slice(0,6)+'+'+b.slice(0,6)).slice(0,12));
     }
-    level = next; levels.push(level.slice());
+    level = next;
+    levels.push(level.slice());
   }
   return levels;
 }
 
-function highlightPath(levelIndex, nodeIndex, levels){
-  // simple visual highlight: re-render and then add active class to nodes
-  const rows = document.querySelectorAll('#merkleViz .tree-row');
-  rows.forEach(r => r.querySelectorAll('.node').forEach(n => n.classList.remove('active')));
-  let idx = nodeIndex;
-  for (let li=0; li<levels.length; li++){
-    const row = rows[li]; if (!row) continue;
-    const nodes = row.querySelectorAll('.node');
-    const node = nodes[idx]; if (node) node.classList.add('active');
-    idx = Math.floor(idx/2);
-  }
-  uiLog(`Inspecting leaf #${nodeIndex}`);
-}
-
-// -----------------------------
-// Business logic: create notes, deposit, withdraw
-// -----------------------------
-const RATE = 1000; // wSTRK per BTC for demo purposes
+// ------------------- Business logic -------------------
+const RATE = 1000;
 async function createNoteForAmount(wAmount){
   const secret = randB64(32);
-  const leaf = await hashAdapter.sha256Hex(secret);
+  const leaf = await sha256Hex(secret);
   return `${secret}:${leaf}:${wAmount}`;
 }
 async function deposit(amountBTC){
   amountBTC = Number(amountBTC);
-  if (!amountBTC || amountBTC <= 0) { uiLog('Invalid deposit amount', 'error'); return null; }
-  if (amountBTC > state.btcBalance) { uiLog('Insufficient BTC', 'error'); return null; }
+  if(!amountBTC || amountBTC <= 0){ uiLog('Invalid deposit amount', 'error'); return null; }
+  if(amountBTC > publicState.btcBalance){ uiLog('Insufficient BTC balance', 'error'); return null; }
   const w = Number((amountBTC * RATE).toFixed(6));
   const note = await createNoteForAmount(w);
-  state.notes.push(note);
-  state.leaves.push(note.split(':')[1]);
-  state.btcBalance = Number((state.btcBalance - amountBTC).toFixed(6));
-  state.wBalance = Number((state.wBalance + w).toFixed(6));
-  const tx = pushTx('DEPOSIT', `Deposited ${amountBTC} BTC → ${w} wSTRK. Note created.`, { noteId: state.notes.length - 1 });
-  try { await navigator.clipboard.writeText(note); uiLog('Note copied to clipboard'); } catch(e){}
+  privateState.notes.push(note);
+  publicState.leaves.push(note.split(':')[1]);
+  publicState.btcBalance = Number((publicState.btcBalance - amountBTC).toFixed(6));
+  publicState.wBalance = Number((publicState.wBalance + w).toFixed(6));
+  const tx = pushTx('DEPOSIT', `Deposited ${amountBTC} BTC → ${w} wSTRK. Note created.`, { noteId: privateState.notes.length - 1 });
+  try{ await navigator.clipboard.writeText(note); uiLog('Note copied to clipboard'); }catch(e){}
   savePublicState();
   renderAll();
   return note;
 }
 function autoSelectNotes(amount){
   amount = Number(amount);
-  const available = state.notes.map((n, idx) => { const parts = n.split(':'); return { idx, note: n, leaf: parts[1], amt: Number(parts[2]) }; });
+  const available = privateState.notes.map((n, idx) => { const parts = n.split(':'); return { idx, note: n, leaf: parts[1], amt: Number(parts[2]) }; });
   available.sort((a,b) => b.amt - a.amt);
-  const picked = []; let sum = 0;
-  for (const a of available){
-    if (sum >= amount) break;
-    picked.push(a); sum += a.amt;
-  }
-  if (sum < amount) return null;
-  return { picked, sum };
+  const picked = []; let sum=0;
+  for(const a of available){ if(sum >= amount) break; picked.push(a); sum += a.amt; }
+  if(sum < amount) return null; return { picked, sum };
 }
 async function withdrawWithNote(noteStr, dest, gasless=false){
-  if (!noteStr){ uiLog('Note required', 'error'); return null; }
-  const parts = noteStr.split(':'); if (parts.length < 3){ uiLog('Bad note format', 'error'); return null; }
+  if(!noteStr){ uiLog('Note required', 'error'); return null; }
+  const parts = noteStr.split(':'); if(parts.length < 3){ uiLog('Bad note format', 'error'); return null; }
   const secret = parts[0], leaf = parts[1], amt = Number(parts[2]);
-  const idx = state.leaves.indexOf(leaf);
-  if (idx === -1){ uiLog('Note not found in pool (already spent?)', 'error'); return null; }
-  const proof = await makeMerkleProof(state.leaves, idx);
-  const root = await calcMerkleRoot(state.leaves);
-  const nullifier = await hashAdapter.sha256Hex('null:' + noteStr);
-  if (state.nulls.includes(nullifier)){ uiLog('Nullifier already used', 'error'); return null; }
+  const idx = publicState.leaves.indexOf(leaf);
+  if(idx === -1){ uiLog('Note not found in pool (already spent?)', 'error'); return null; }
+  const proof = await makeMerkleProof(publicState.leaves, idx);
+  const root = await calcMerkleRoot(publicState.leaves);
+  const nullifier = await sha256Hex('null:' + noteStr);
+  if(publicState.nulls.includes(nullifier)){ uiLog('Nullifier already used', 'error'); return null; }
   const ok = await verifyMerkleProof(leaf, proof, root, idx);
-  if (!ok){ uiLog('Proof verification failed', 'error'); return null; }
-  state.nulls.push(nullifier);
-  state.leaves.splice(idx,1);
-  const noteIdx = state.notes.indexOf(noteStr); if (noteIdx !== -1) state.notes.splice(noteIdx,1);
-  state.wBalance = Number((state.wBalance - amt).toFixed(6));
+  if(!ok){ uiLog('Proof verification failed', 'error'); return null; }
+  publicState.nulls.push(nullifier);
+  publicState.leaves.splice(idx,1);
+  const noteIdx = privateState.notes.indexOf(noteStr); if(noteIdx !== -1) privateState.notes.splice(noteIdx,1);
+  publicState.wBalance = Number((publicState.wBalance - amt).toFixed(6));
   const tx = pushTx('WITHDRAW', `Withdraw ${amt} wSTRK → ${dest}. Gasless:${gasless}`, { nullifier, proofLen: proof.length });
   savePublicState();
   renderAll();
@@ -718,45 +588,43 @@ async function withdrawWithNote(noteStr, dest, gasless=false){
 }
 async function withdrawAmount(amount, dest, gasless=false){
   amount = Number(amount);
-  if (isNaN(amount) || amount <= 0){ uiLog('Invalid amount', 'error'); return null; }
-  if (amount > state.wBalance){ uiLog('Insufficient wrapped balance', 'error'); return null; }
+  if(isNaN(amount) || amount <= 0){ uiLog('Invalid withdraw amount', 'error'); return null; }
+  if(amount > publicState.wBalance){ uiLog('Insufficient wrapped balance', 'error'); return null; }
   const selection = autoSelectNotes(amount);
-  if (!selection){ uiLog('Insufficient notes to cover amount', 'error'); return null; }
-  for (const p of selection.picked){
-    const n = p.note;
-    const nullifier = await hashAdapter.sha256Hex('null:' + n);
-    state.nulls.push(nullifier);
-    const leaf = p.leaf; const li = state.leaves.indexOf(leaf); if (li !== -1) state.leaves.splice(li,1);
-    const ni = state.notes.indexOf(n); if (ni !== -1) state.notes.splice(ni,1);
+  if(!selection){ uiLog('Insufficient notes to cover amount', 'error'); return null; }
+  for(const p of selection.picked){
+    const n = p.note; const nullifier = await sha256Hex('null:' + n); publicState.nulls.push(nullifier);
+    const leaf = p.leaf; const li = publicState.leaves.indexOf(leaf); if(li !== -1) publicState.leaves.splice(li,1);
+    const ni = privateState.notes.indexOf(n); if(ni !== -1) privateState.notes.splice(ni,1);
   }
   const sum = selection.sum; const change = Number((sum - amount).toFixed(6));
-  if (change > 0.000001){
-    const cn = await createNoteForAmount(change); state.notes.push(cn); state.leaves.push(cn.split(':')[1]); uiLog(`Change note created: ${change} wSTRK`);
+  if(change > 0.000001){
+    const cn = await createNoteForAmount(change); privateState.notes.push(cn); publicState.leaves.push(cn.split(':')[1]); uiLog(`Change note created: ${change} wSTRK`);
   }
-  state.wBalance = Number((state.wBalance - amount).toFixed(6));
+  publicState.wBalance = Number((publicState.wBalance - amount).toFixed(6));
   pushTx('WITHDRAW', `Withdraw ${amount} wSTRK → ${dest} (used ${selection.picked.length} notes)`);
   savePublicState();
   renderAll();
   return true;
 }
 
-// -----------------------------
-// Encrypted export/import (explicit user action)
-// -----------------------------
+// ------------------- Encrypted export/import -------------------
 async function exportEncrypted(password){
-  if (!password){ uiLog('Password required', 'error'); return; }
+  if(!password){ uiLog('Password required', 'error'); return; }
+  // export both public and private state in the encrypted payload (explicit user action)
+  const full = { publicState, privateState };
   const enc = new TextEncoder(); const salt = crypto.getRandomValues(new Uint8Array(16));
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
   const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['encrypt']);
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const data = new TextEncoder().encode(JSON.stringify(state));
+  const data = new TextEncoder().encode(JSON.stringify(full));
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
   const payload = { s: btoa(String.fromCharCode(...salt)), i: btoa(String.fromCharCode(...iv)), c: btoa(String.fromCharCode(...new Uint8Array(ct))) };
   downloadText('bitshade_backup_enc.json', JSON.stringify(payload, null, 2));
   uiLog('Encrypted backup saved.');
 }
 async function importEncryptedFile(file, password){
-  try {
+  try{
     const txt = await file.text(); const payload = JSON.parse(txt);
     const salt = Uint8Array.from(atob(payload.s), c => c.charCodeAt(0));
     const iv = Uint8Array.from(atob(payload.i), c => c.charCodeAt(0));
@@ -765,154 +633,138 @@ async function importEncryptedFile(file, password){
     const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
     const data = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
     const obj = JSON.parse(new TextDecoder().decode(data));
-    state = obj;
+    // restore both public and private
+    publicState = obj.publicState ?? publicState;
+    privateState = obj.privateState ?? privateState;
     savePublicState();
     renderAll();
     uiLog('Encrypted backup imported successfully.');
-  } catch (e) {
-    uiLog('Import failed: ' + (e.message || e), 'error');
-  }
+  }catch(e){ uiLog('Import failed: ' + (e.message || e), 'error'); }
 }
 
-// -----------------------------
-// On-chain sync (UI placeholder)
-// -----------------------------
-$('btnSyncRootOnChain')?.addEventListener('click', async () => {
-  const root = await calcMerkleRoot(state.leaves);
-  if (!root) { uiLog('No root available to sync', 'error'); return; }
+// ------------------- On-chain sync placeholder -------------------
+$('btnSyncRootOnChain')?.addEventListener('click', async ()=>{
+  const root = await calcMerkleRoot(publicState.leaves);
+  if(!root){ uiLog('No root available to sync', 'error'); return; }
   const tx = pushTx('SYNC', `Stored Merkle root on-chain: ${root.substr(0,12)}...`, { root, txhash: fakeTxHash() });
   $('onchainStatus').textContent = `On-chain root stored — tx ${tx.meta.txhash}`;
 });
-$('btnCheckOnChain')?.addEventListener('click', () => {
-  const last = state.txs.slice().reverse().find(t => t.type === 'SYNC');
-  if(!last) { uiLog('No on-chain root found', 'error'); return; }
+$('btnCheckOnChain')?.addEventListener('click', ()=>{
+  const last = publicState.txs.slice().reverse().find(t => t.type === 'SYNC');
+  if(!last){ uiLog('No on-chain root found', 'error'); return; }
   $('onchainStatus').textContent = `On-chain root: ${last.meta.root.substr(0,12)}... tx:${last.meta.txhash}`;
   uiLog('Checked on-chain root');
 });
 
-// -----------------------------
-// Onboarding & UI wiring
-// -----------------------------
+// ------------------- Mode & onboarding -------------------
+let mode = 'beginner';
+$('modeBegin')?.addEventListener('click', ()=>{ mode='beginner'; renderModeHelp(); });
+$('modeAdv')?.addEventListener('click', ()=>{ mode='advanced'; renderModeHelp(); });
+function renderModeHelp(){ if($('modeHelp')) $('modeHelp').textContent = 'Mode: ' + (mode==='beginner' ? 'Beginner — guided tour' : 'Advanced — technical inspector'); renderOnboard(); }
+
 function renderOnboard(){
-  const container = $('onboardChecks');
+  const container = $('onboardChecks'); if(!container) return;
   container.innerHTML = '';
   const steps = [
-    { id: 's-deposit', title: 'Create a note', desc: 'Create a private note by depositing.', ok: state.notes.length > 0 },
-    { id: 's-inspect', title: 'Inspect Merkle root', desc: 'Open pool inspector and verify root.', ok: state.leaves.length > 0 },
-    { id: 's-withdraw', title: 'Withdraw note', desc: 'Spend a note and observe nullifier creation.', ok: state.nulls.length > 0 },
-    { id: 's-backup', title: 'Export backup', desc: 'Export an encrypted backup for recovery.', ok: false }
+    { id: 's-deposit', title: 'Create a note', desc: 'Make your first private note (Deposit BTC → wSTRK).' , ok: privateState.notes.length > 0 },
+    { id: 's-inspect', title: 'Inspect Merkle root', desc: 'Open Pool Inspector and verify the root matches your note set.' , ok: publicState.leaves.length > 0 },
+    { id: 's-withdraw', title: 'Withdraw funds', desc: 'Spend a note to a destination address and observe the nullifier.' , ok: publicState.nulls.length > 0 },
+    { id: 's-backup', title: 'Encrypted backup', desc: 'Export an encrypted file that contains your notes (password required).' , ok: false }
   ];
-  steps.forEach(s => {
-    const el = document.createElement('div'); el.className = 'onboard-check' + (s.ok ? ' completed' : '');
-    el.innerHTML = `<div style="flex:1"><div style="font-weight:700">${s.title}</div><div class="small" style="margin-top:4px">${s.desc}</div></div>
-      <div style="display:flex;gap:8px"><button class="ghost" data-action="${s.id}">${s.ok ? 'Done' : 'Start'}</button></div>`;
+  steps.forEach(s=>{
+    const el = document.createElement('div'); el.className = 'onboard-check';
+    el.innerHTML = `<div style="width:20px"><input type="checkbox" ${s.ok ? 'checked' : ''} disabled></div>
+      <div style="flex:1"><div style="font-weight:700">${s.title}</div><div class="tiny muted">${s.desc}</div></div>
+      <div style="width:120px;display:flex;gap:6px;justify-content:flex-end">
+        <button class="ghost" data-action="${s.id}">${s.ok ? 'Done' : 'Start'}</button>
+      </div>`;
     container.appendChild(el);
   });
-  container.querySelectorAll('[data-action]').forEach(b => b.onclick = () => {
+  container.querySelectorAll('[data-action]').forEach(b=>b.onclick = ()=>{
     const a = b.getAttribute('data-action');
-    if (a === 's-deposit') { $('depositAmount').value = '0.01'; $('btnDeposit').click(); }
-    if (a === 's-inspect') { uiLog('Open pool inspector to review Merkle root'); document.querySelector('#merkleViz')?.scrollIntoView({behavior:'smooth'}); }
-    if (a === 's-withdraw') { uiLog('Paste a note into Withdraw to spend it'); document.querySelector('#noteInput')?.focus(); }
-    if (a === 's-backup') { $('btnExportEnc').click(); }
+    if(a === 's-deposit'){ $('depositAmount').value = '0.01'; $('btnDeposit').click(); }
+    if(a === 's-inspect'){ uiLog('Open Pool Inspector to review Merkle root'); document.querySelector('#merkleViz')?.scrollIntoView({behavior:'smooth'}); }
+    if(a === 's-withdraw'){ uiLog('Paste a note into Withdraw to spend it'); document.querySelector('#noteInput')?.focus(); }
+    if(a === 's-backup'){ $('btnExportEnc').click(); }
   });
 }
 
-// -----------------------------
-// Wire controls
-// -----------------------------
+// ------------------- Controls wiring -------------------
 $('depositPreset')?.addEventListener('change', ()=>{ $('depositAmount').value = $('depositPreset').value; });
-$('btnDeposit')?.addEventListener('click', async () => {
-  const amt = $('depositAmount').value || '0.01';
+$('btnDeposit')?.addEventListener('click', async ()=>{
+  const amt = $('depositAmount')?.value || '0.01';
   const note = await deposit(amt);
-  if (note) uiLog(`Note created (${note.slice(0,12)}...) — keep it safe`);
-  // Update counters
-  $('statsDeposits').textContent = Number($('statsDeposits').textContent || 0) + 1;
+  if(note){ uiLog(`Note created (${note.slice(0,12)}...) — keep it safe`); renderOnboard(); }
 });
-$('btnBatchDeposit')?.addEventListener('click', async () => {
-  for (let i=0;i<3;i++){ await deposit(0.01); await new Promise(r=>setTimeout(r,120)); }
-  uiLog('Batch deposit completed');
-  $('statsDeposits').textContent = Number($('statsDeposits').textContent || 0) + 3;
-});
+$('btnBatchDeposit')?.addEventListener('click', async ()=>{ for(let i=0;i<3;i++){ await deposit(0.01); await new Promise(r=>setTimeout(r,220)); } uiLog('Batch deposit completed'); renderOnboard(); });
 
-$('btnAutoSelect')?.addEventListener('click', ()=> {
-  const amt = Number($('withdrawAmount').value || 0);
-  if (!amt) { uiLog('Enter withdraw amount first', 'error'); return; }
-  const sel = autoSelectNotes(amt); if (!sel) { uiLog('Auto-select failed (insufficient notes)', 'error'); return; }
-  $('notesForSelect').innerHTML = sel.picked.map(p => `#${p.idx} ${p.amt} wSTRK`).join('<br>');
-  uiLog('Notes auto-selected');
+$('btnAutoSelect')?.addEventListener('click', ()=>{
+  const amt = Number($('withdrawAmount')?.value || 0);
+  if(!amt){ uiLog('Enter withdraw amount first', 'error'); return; }
+  const sel = autoSelectNotes(amt); if(!sel){ uiLog('Auto-select failed (insufficient notes)', 'error'); return; }
+  const list = sel.picked.map(p=>`#${p.idx} ${p.amt} wSTRK`).join(', ');
+  $('notesForSelect').innerHTML = `<div class="tiny muted">selected: ${list}</div>`; uiLog('Notes auto-selected: ' + list);
 });
-
-$('btnWithdraw')?.addEventListener('click', async () => {
-  const note = $('noteInput').value.trim(); const amt = $('withdrawAmount').value; const dest = $('destAddr').value || '0xDEADBEEF'; const gasless = $('checkboxGasless').checked;
-  if (note) { const tx = await withdrawWithNote(note, dest, gasless); if (tx) { uiLog('Withdraw processed'); $('statsWithdraws').textContent = Number($('statsWithdraws').textContent || 0) + 1; } return; }
-  if (!amt) { uiLog('Enter withdraw amount or paste a note', 'error'); return; }
-  const ok = await withdrawAmount(amt, dest, gasless);
-  if (ok) { uiLog('Withdraw processed'); $('statsWithdraws').textContent = Number($('statsWithdraws').textContent || 0) + 1; }
+$('btnWithdraw')?.addEventListener('click', async ()=>{
+  const note = $('noteInput')?.value.trim(); const amt = $('withdrawAmount')?.value; const dest = $('destAddr')?.value || '0xDEADBEEF'; const gasless = $('checkboxGasless')?.checked;
+  if(note){ const tx = await withdrawWithNote(note, dest, gasless); if(tx) uiLog('Withdraw processed'); renderOnboard(); return; }
+  if(!amt){ uiLog('Enter withdraw amount or paste a note', 'error'); return; }
+  const ok = await withdrawAmount(amt, dest, gasless); if(ok) uiLog('Withdraw processed'); renderOnboard();
 });
-
-$('btnVerifyProof')?.addEventListener('click', async () => {
-  const pasted = $('noteInput').value.trim(); if (!pasted) { uiLog('Paste a note to verify', 'error'); return; }
+$('btnVerifyProof')?.addEventListener('click', async ()=>{
+  const pasted = $('noteInput')?.value.trim(); if(!pasted){ uiLog('Paste a note to verify', 'error'); return; }
   const parts = pasted.split(':'); const leaf = parts[1];
-  const idx = state.leaves.indexOf(leaf);
-  if (idx === -1) { uiLog('Leaf not found in pool', 'error'); return; }
-  const proof = await makeMerkleProof(state.leaves, idx);
-  const root = await calcMerkleRoot(state.leaves);
+  const idx = publicState.leaves.indexOf(leaf);
+  if(idx === -1){ uiLog('Leaf not found in pool', 'error'); return; }
+  const proof = await makeMerkleProof(publicState.leaves, idx);
+  const root = await calcMerkleRoot(publicState.leaves);
   const ok = await verifyMerkleProof(leaf, proof, root, idx);
-  uiLog('Proof verify: ' + (ok ? 'OK' : 'FAILED'));
-  $('statsProofs').textContent = Number($('statsProofs').textContent || 0) + 1;
+  uiLog('Proof verify: ' + (ok ? 'OK' : 'FAILED')); uiLog(`Proof steps: ${proof.length}`);
 });
 
-$('btnShowTx')?.addEventListener('click', () => {
-  const last = state.txs.slice().reverse()[0];
-  if (!last) { uiLog('No transactions available', 'error'); return; }
-  downloadText('proof_sample.json', JSON.stringify(last,null,2)); uiLog('Proof JSON exported');
+$('btnDemoRun')?.addEventListener('click', async ()=>{
+  uiLog('Running flow...');
+  const n = await deposit(0.02);
+  await new Promise(r=>setTimeout(r,300));
+  if(n){ await withdrawWithNote(n, '0xDEMO', true); uiLog('Flow finished'); renderOnboard(); }
 });
-
-// Export/import wiring
-$('btnExportEnc')?.addEventListener('click', async () => {
-  const pw = prompt('Enter password for encrypted export (strong):'); if (!pw) return;
+$('btnExportEnc')?.addEventListener('click', async ()=>{
+  const pw = prompt('Enter password for encrypted export (strong):'); if(!pw) return;
   await exportEncrypted(pw);
 });
-$('btnImportEnc')?.addEventListener('click', () => {
-  const f = document.createElement('input'); f.type = 'file'; f.accept = '.json'; f.onchange = e => {
-    const file = e.target.files[0]; const pw = prompt('Enter password to decrypt:'); if (!pw) return; importEncryptedFile(file, pw);
-  }; f.click();
-});
+$('btnImportEnc')?.addEventListener('click', ()=>{ const f = document.createElement('input'); f.type = 'file'; f.accept = '.json'; f.onchange = e => { const file = e.target.files[0]; const pw = prompt('Enter password to decrypt:'); if(!pw) return; importEncryptedFile(file, pw); }; f.click(); });
+$('btnReset')?.addEventListener('click', ()=>{ showConfirm('Reset application state and clear local data?', ()=>{ resetAll(); }); });
 
 // Reveal modal wiring
-function showRevealModal(note){ $('revealText').textContent = note; showModal('revealModal'); }
-$('revealClose')?.addEventListener('click', ()=> hideModal('revealModal'));
-$('revealCopy')?.addEventListener('click', ()=> { const t = $('revealText').textContent || ''; copyToClipboard(t); uiLog('Note copied'); hideModal('revealModal'); });
+$('revealCancel')?.addEventListener('click', ()=>{ hideRevealModal(); });
+$('revealCopy')?.addEventListener('click', ()=>{ const t = $('revealText')?.textContent || ''; copyToClipboard(t); uiLog('Note copied'); });
 
-function showModal(id){ const el = $(id); if(!el) return; el.style.display = 'flex'; el.setAttribute('aria-hidden','false'); }
-function hideModal(id){ const el = $(id); if(!el) return; el.style.display = 'none'; el.setAttribute('aria-hidden','true'); }
+// Glock modal wiring
+$('btnGlockInfo')?.addEventListener('click', ()=>{ $('glockModal').style.display = 'flex'; });
+$('btnGlockClose')?.addEventListener('click', ()=>{ $('glockModal').style.display = 'none'; });
 
-// Confirm modal wiring
-function showConfirm(msg, okCb){
-  $('confirmText').textContent = msg; showModal('confirmModal');
-  $('confirmOk').onclick = ()=>{ hideModal('confirmModal'); okCb && okCb(); };
-  $('confirmCancel').onclick = ()=> hideModal('confirmModal');
-}
+// Confirm modal cancel
+$('confirmCancel')?.addEventListener('click', ()=>{ $('confirmModal').style.display = 'none'; });
 
-// Acknowledge banner
-$('btnAcknowledge')?.addEventListener('click', () => {
-  // Hide banner (simple UX)
-  const b = document.querySelector('.card'); if (b) b.style.display = 'none';
+// Utility: download last tx proof
+$('btnShowTx')?.addEventListener('click', ()=>{
+  const last = publicState.txs.slice().reverse()[0];
+  if(!last){ uiLog('No transactions available', 'error'); return; }
+  downloadText('proof_sample.json', JSON.stringify(last, null, 2)); uiLog('Proof JSON exported');
 });
 
-// Skip onboarding
-$('btnSkipOnboard')?.addEventListener('click', ()=> { document.querySelector('#onboardChecks').innerHTML = '<div class="small" style="color:var(--muted)">Onboarding skipped</div>'; });
+function showRevealModal(note){ $('revealText').textContent = note; $('noteRevealModal').style.display = 'flex'; }
+function hideRevealModal(){ $('noteRevealModal').style.display = 'none'; }
 
-// Utility download last tx
-function downloadProofForLast(){ const last = state.txs.slice().reverse()[0]; if (!last) return; downloadText('proof.json', JSON.stringify(last,null,2)); }
+function showConfirm(msg, okCb){ $('confirmText').textContent = msg; $('confirmModal').style.display = 'flex'; const ok = ()=>{ $('confirmModal').style.display = 'none'; okCb && okCb(); cleanup(); }; const cancel = ()=>{ $('confirmModal').style.display = 'none'; cleanup(); }; function cleanup(){ $('confirmOk').onclick=null; $('confirmCancel').onclick=null; } $('confirmOk').onclick = ok; $('confirmCancel').onclick = cancel; }
 
-// -----------------------------
-// Initial render and setup
-// -----------------------------
+// ------------------- Init -------------------
+loadPublicState();
 renderAll();
 
-// For convenience during local demo, expose state to console (dev only)
-window.__bitshade_state = state;
+// Expose state for debugging (dev only)
+window.__publicState = publicState;
+window.__privateState = privateState;
 
 </script>
 </body>
