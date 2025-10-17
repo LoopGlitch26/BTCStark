@@ -1,8 +1,6 @@
 # BitShade-Pro — Private Bitcoin to Starknet Bridge
 
-
-https://github.com/user-attachments/assets/390ba092-9394-49da-930b-cf590ae3d5e5
-
+https://github.com/user-attachments/assets/c87e0ca7-4f6a-47a5-88e3-e9d3674f0937
 
 <img width="1536" height="1024" alt="ChatGPT Image Oct 16, 2025, 12_14_01 AM" src="https://github.com/user-attachments/assets/153f4315-1994-4bef-bceb-87afaa69e262" />
 
